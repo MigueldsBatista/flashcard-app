@@ -17,6 +17,10 @@
       "headers": {
         "Authorization": "Bearer sbp_73fd474cca19e51e642e13df2f314009b89d2085"
       }
+    },
+     "vercel": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.vercel.com"]
     }
   }
 }

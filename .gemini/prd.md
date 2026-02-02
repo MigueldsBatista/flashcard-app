@@ -84,3 +84,8 @@ A interface deve transmitir calma. O uso de espaços em branco (ou espaços vazi
 *   O algoritmo de repetição espaçada deve agendar corretamente cartões para pelo menos 4 estados de tempo diferentes.
 *   O modo offline deve permitir completar uma sessão inteira e sincronizar ao detectar rede.
 *   A interface de oclusão de imagem deve suportar pelo menos 10 máscaras por foto sem perda de performance.
+
+## 11. Stack Tecnológico
+*   **Gerenciador de Pacotes:** Bun.
+*   **Frontend:** Vue.js 3 + Vite.
+*   **Backend:** Supabase.
