@@ -1,0 +1,22 @@
+{
+  "autoApprovedTools": [
+    "shell",
+    "files"
+  ],
+  "mcpServers": {
+    "context7": {
+      "httpUrl": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-a7698901-5bc5-4aa1-9de0-d6d947d9c636",
+        "Accept": "application/json, text/event-stream"
+      }
+    },
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp?project_ref=oqsdehomkrojysfgecnn",
+      "type": "http",
+      "headers": {
+        "Authorization": "Bearer sbp_73fd474cca19e51e642e13df2f314009b89d2085"
+      }
+    }
+  }
+}
