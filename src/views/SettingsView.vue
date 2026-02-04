@@ -79,11 +79,11 @@ function toggleDarkMode(value: boolean) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background p-4 pb-24">
-    <div class="max-w-2xl mx-auto">
+  <div class="min-h-screen bg-background p-4 pb-24 md:pb-8">
+    <div class="max-w-5xl mx-auto">
       <!-- Header -->
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-foreground mb-1">
+        <h1 class="text-2xl md:text-3xl font-bold text-foreground mb-1">
           Configurações
         </h1>
         <p class="text-sm text-muted-foreground">
@@ -91,182 +91,190 @@ function toggleDarkMode(value: boolean) {
         </p>
       </div>
 
-      <!-- Study Settings -->
-      <Card class="p-6 mb-6">
-        <div class="flex items-center gap-2 mb-4">
-          <SettingsIcon class="w-5 h-5 text-primary" />
-          <h2 class="text-lg font-semibold text-foreground">
-            Configurações de Estudo
-          </h2>
-        </div>
-
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <!-- Left Column -->
         <div class="space-y-6">
-          <div>
-            <label class="text-sm font-medium text-foreground block mb-2">
-              Limite de Novos Cartões por Dia
-            </label>
-            <Input
-              type="number"
-              :model-value="String(store.settings.dailyNewCardLimit)"
-              @update:model-value="store.updateSettings({ dailyNewCardLimit: parseInt($event) || 20 })"
-            />
-            <p class="text-xs text-muted-foreground mt-1">
-              Recomendado: 10-30 cartões por dia
-            </p>
-          </div>
-
-          <Separator />
-
-          <div>
-            <label class="text-sm font-medium text-foreground block mb-2">
-              Limite de Revisões por Dia
-            </label>
-            <Input
-              type="number"
-              :model-value="String(store.settings.dailyReviewLimit)"
-              @update:model-value="store.updateSettings({ dailyReviewLimit: parseInt($event) || 200 })"
-            />
-            <p class="text-xs text-muted-foreground mt-1">
-              Recomendado: 100-300 cartões por dia
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      <!-- Interface Settings -->
-      <Card class="p-6 mb-6">
-        <div class="flex items-center gap-2 mb-4">
-          <Smartphone class="w-5 h-5 text-primary" />
-          <h2 class="text-lg font-semibold text-foreground">
-            Interface
-          </h2>
-        </div>
-
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="text-sm font-medium text-foreground">
-                Modo Escuro
-              </label>
-              <p class="text-xs text-muted-foreground mt-1">
-                Otimizado para OLED
-              </p>
+          <!-- Study Settings -->
+          <Card class="p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <SettingsIcon class="w-5 h-5 text-primary" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Configurações de Estudo
+              </h2>
             </div>
-            <Switch
-              :model-value="store.settings.darkMode"
-              @update:model-value="toggleDarkMode"
-            />
-          </div>
 
-          <Separator />
+            <div class="space-y-6">
+              <div>
+                <label class="text-sm font-medium text-foreground block mb-2">
+                  Limite de Novos Cartões por Dia
+                </label>
+                <Input
+                  type="number"
+                  :model-value="String(store.settings.dailyNewCardLimit)"
+                  @update:model-value="store.updateSettings({ dailyNewCardLimit: parseInt($event) || 20 })"
+                />
+                <p class="text-xs text-muted-foreground mt-1">
+                  Recomendado: 10-30 cartões por dia
+                </p>
+              </div>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="text-sm font-medium text-foreground flex items-center gap-2">
-                <Zap class="w-4 h-4" />
-                Feedback Háptico
-              </label>
-              <p class="text-xs text-muted-foreground mt-1">
-                Vibração ao responder cartões
-              </p>
+              <Separator />
+
+              <div>
+                <label class="text-sm font-medium text-foreground block mb-2">
+                  Limite de Revisões por Dia
+                </label>
+                <Input
+                  type="number"
+                  :model-value="String(store.settings.dailyReviewLimit)"
+                  @update:model-value="store.updateSettings({ dailyReviewLimit: parseInt($event) || 200 })"
+                />
+                <p class="text-xs text-muted-foreground mt-1">
+                  Recomendado: 100-300 cartões por dia
+                </p>
+              </div>
             </div>
-            <Switch
-              :model-value="store.settings.hapticFeedback"
-              @update:model-value="store.updateSettings({ hapticFeedback: $event })"
-            />
-          </div>
+          </Card>
 
-          <Separator />
-
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="text-sm font-medium text-foreground flex items-center gap-2">
-                <Volume2 class="w-4 h-4" />
-                Reproduzir Áudio Automaticamente
-              </label>
-              <p class="text-xs text-muted-foreground mt-1">
-                Para cartões com áudio
-              </p>
+          <!-- Interface Settings -->
+          <Card class="p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <Smartphone class="w-5 h-5 text-primary" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Interface
+              </h2>
             </div>
-            <Switch
-              :model-value="store.settings.autoPlayAudio"
-              @update:model-value="store.updateSettings({ autoPlayAudio: $event })"
-            />
-          </div>
-        </div>
-      </Card>
 
-      <!-- Data Management -->
-      <Card class="p-6 mb-6">
-        <div class="flex items-center gap-2 mb-4">
-          <Database class="w-5 h-5 text-primary" />
-          <h2 class="text-lg font-semibold text-foreground">
-            Gerenciamento de Dados
-          </h2>
-        </div>
-
-        <div class="space-y-3">
-          <Button variant="outline" class="w-full justify-start" @click="handleExportData">
-            Exportar Todos os Dados
-          </Button>
-
-          <Button variant="outline" class="w-full justify-start" @click="handleImportData">
-            Importar Dados
-          </Button>
-
-          <Separator />
-
-          <Button 
-            variant="outline" 
-            class="w-full justify-start text-destructive hover:bg-destructive/10"
-            @click="clearAllData"
-          >
-            Limpar Todos os Dados
-          </Button>
-
-          <p class="text-xs text-muted-foreground">
-            Total armazenado: {{ store.cards.length }} cartões em {{ store.decks.length }} baralhos
-          </p>
-        </div>
-      </Card>
-
-      <!-- Account -->
-      <Card class="p-6 mb-8">
-        <div class="flex items-center gap-2 mb-4">
-          <User class="w-5 h-5 text-primary" />
-          <h2 class="text-lg font-semibold text-foreground">
-            Conta
-          </h2>
-        </div>
-
-        <div class="space-y-3">
-            <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div class="flex items-center gap-3">
-                    <div class="bg-primary/10 p-2 rounded-full">
-                         <User class="w-4 h-4 text-primary" />
-                    </div>
-                    <div class="text-sm">
-                        <p class="font-medium text-foreground">Usuário</p>
-                        <p class="text-xs text-muted-foreground">{{ authStore.user?.email }}</p>
-                    </div>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="text-sm font-medium text-foreground">
+                    Modo Escuro
+                  </label>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    Otimizado para OLED
+                  </p>
                 </div>
+                <Switch
+                  :model-value="store.settings.darkMode"
+                  @update:model-value="toggleDarkMode"
+                />
+              </div>
+
+              <Separator />
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Zap class="w-4 h-4" />
+                    Feedback Háptico
+                  </label>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    Vibração ao responder cartões
+                  </p>
+                </div>
+                <Switch
+                  :model-value="store.settings.hapticFeedback"
+                  @update:model-value="store.updateSettings({ hapticFeedback: $event })"
+                />
+              </div>
+
+              <Separator />
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Volume2 class="w-4 h-4" />
+                    Reproduzir Áudio Automaticamente
+                  </label>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    Para cartões com áudio
+                  </p>
+                </div>
+                <Switch
+                  :model-value="store.settings.autoPlayAudio"
+                  @update:model-value="store.updateSettings({ autoPlayAudio: $event })"
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-6">
+          <!-- Account -->
+          <Card class="p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <User class="w-5 h-5 text-primary" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Conta
+              </h2>
             </div>
 
-          <Button 
-            variant="outline" 
-            class="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10 border-red-200 dark:border-red-900/30"
-            @click="handleLogout"
-          >
-            <LogOut class="w-4 h-4 mr-2" />
-            Sair da Conta
-          </Button>
-        </div>
-      </Card>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="bg-primary/10 p-2 rounded-full">
+                    <User class="w-4 h-4 text-primary" />
+                  </div>
+                  <div class="text-sm">
+                    <p class="font-medium text-foreground">Usuário</p>
+                    <p class="text-xs text-muted-foreground truncate max-w-[150px]">{{ authStore.user?.email }}</p>
+                  </div>
+                </div>
+              </div>
 
-      <!-- About -->
-      <div class="text-center text-sm text-muted-foreground">
-        <p>Ultra Focus v1.0.0</p>
-        <p class="mt-1">Sistema de Aprendizado Acelerado</p>
+              <Button 
+                variant="outline" 
+                class="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10 border-red-200 dark:border-red-900/30 shadow-sm"
+                @click="handleLogout"
+              >
+                <LogOut class="w-4 h-4 mr-2" />
+                Sair da Conta
+              </Button>
+            </div>
+          </Card>
+
+          <!-- Data Management -->
+          <Card class="p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <Database class="w-5 h-5 text-primary" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Gerenciamento de Dados
+              </h2>
+            </div>
+
+            <div class="space-y-3">
+              <Button variant="outline" class="w-full justify-start shadow-sm" @click="handleExportData">
+                Exportar Todos os Dados
+              </Button>
+
+              <Button variant="outline" class="w-full justify-start shadow-sm" @click="handleImportData">
+                Importar Dados
+              </Button>
+
+              <Separator />
+
+              <Button 
+                variant="outline" 
+                class="w-full justify-start text-destructive hover:bg-destructive/10 shadow-sm"
+                @click="clearAllData"
+              >
+                Limpar Todos os Dados
+              </Button>
+
+              <p class="text-xs text-muted-foreground">
+                Total armazenado: {{ store.cards.length }} cartões em {{ store.decks.length }} baralhos
+              </p>
+            </div>
+          </Card>
+
+          <!-- About -->
+          <Card class="p-6 bg-muted/30 border-none shadow-none text-center">
+            <p class="text-foreground font-semibold">Ultra Focus v1.0.0</p>
+            <p class="mt-1 text-sm text-muted-foreground">Sistema de Aprendizado Acelerado</p>
+          </Card>
+        </div>
       </div>
     </div>
   </div>

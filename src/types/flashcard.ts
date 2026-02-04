@@ -76,6 +76,7 @@ export interface StudyStats {
         tomorrow: number
         week: number
     }
+    nextAvailableCardDate: Date | null
 }
 
 export interface UserSettings {

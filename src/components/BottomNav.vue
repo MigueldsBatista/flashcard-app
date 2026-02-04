@@ -20,7 +20,7 @@ const navItems = [
 </script>
 
 <template>
-  <div class="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-inset-bottom z-50">
+  <div class="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-inset-bottom z-50 md:hidden">
     <div class="max-w-2xl mx-auto">
       <div class="grid grid-cols-4 gap-1 p-2">
         <button
