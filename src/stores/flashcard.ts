@@ -109,6 +109,12 @@ export const useFlashcardStore = defineStore('flashcard', () => {
             return reviewDate >= today && reviewDate < weekFromNow
         }).length
 
+        // Find the next available card date (minimum nextReview for cards not yet due)
+        const nonDueCards = cards.value.filter(card => new Date(card.nextReview) > now)
+        const nextAvailableCardDate = nonDueCards.length > 0
+            ? new Date(Math.min(...nonDueCards.map(card => new Date(card.nextReview).getTime())))
+            : null
+
         return {
             today: {
                 cardsReviewed: cardsReviewedToday,
@@ -126,6 +132,7 @@ export const useFlashcardStore = defineStore('flashcard', () => {
                 tomorrow: nextReviewsTomorrow,
                 week: nextReviewsWeek,
             },
+            nextAvailableCardDate,
         }
     })
 

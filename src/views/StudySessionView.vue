@@ -139,6 +139,23 @@ function handleEndStudy() {
 const isComplete = computed(() => {
   return !currentCard.value || (currentCardIndex.value >= studyCards.value.length - 1 && !showAnswer.value && studiedCount.value > 0)
 })
+
+function formatCooldown(date: Date | null): string {
+  if (!date) return ''
+  
+  const now = new Date()
+  const diff = date.getTime() - now.getTime()
+  
+  if (diff <= 0) return 'Novos cartões estão prontos agora!'
+  
+  const minutes = Math.ceil(diff / (1000 * 60))
+  if (minutes < 60) return `Próximos cartões em ${minutes} minutos.`
+  
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `Próximos cartões em aproximadamente ${hours} horas.`
+  
+  return 'Próximos cartões amanhã.'
+}
 </script>
 
 <template>
@@ -152,6 +169,10 @@ const isComplete = computed(() => {
       <p class="text-sm text-muted-foreground mb-4">
         Você completou todos os cartões disponíveis!
       </p>
+      <div v-if="store.stats.nextAvailableCardDate" class="mb-4 p-2 bg-primary/10 rounded-lg border border-primary/20 flex items-center justify-center gap-2 text-primary text-sm font-medium">
+        <Calendar class="w-4 h-4" />
+        {{ formatCooldown(store.stats.nextAvailableCardDate) }}
+      </div>
       <div class="bg-muted/50 rounded-lg p-3 mb-4">
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div>

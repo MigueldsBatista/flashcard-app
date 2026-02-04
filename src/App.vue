@@ -7,6 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 // Components
 import BottomNav from '@/components/BottomNav.vue'
 import Toast from '@/components/Toast.vue'
+import NavigationDrawer from './components/NavigationDrawer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,22 +66,33 @@ const currentView = computed(() => {
   return 'home'
 })
 
-const showBottomNav = computed(() => {
+const showNavigationDrawer = computed(() => {
   return !['study', 'editCards', 'studyDeck', 'login', 'register'].includes(route.name as string)
 })
+
+
 
 </script>
 
 <template>
-  <div class="min-h-screen bg-background">
+  <div class="min-h-screen bg-background flex flex-col md:flex-row">
+    <!-- Sidebar for Tablet/Desktop -->
+    <NavigationDrawer
+      v-if="showNavigationDrawer"
+      :current-view="currentView"
+      @navigate="handleNavigate"
+    />
+
     <!-- Main Content -->
-    <router-view v-slot="{ Component }">
-      <component :is="Component" />
-    </router-view>
+    <main class="flex-1 w-full max-w-full">
+      <router-view v-slot="{ Component }">
+        <component :is="Component" />
+      </router-view>
+    </main>
 
     <!-- Bottom Navigation -->
     <BottomNav
-      v-if="showBottomNav"
+      v-if="showNavigationDrawer"
       :current-view="currentView"
       @navigate="handleNavigate"
     />
