@@ -27,9 +27,14 @@ const animationClass = ref('')
 
 // Get cards for this session
 const studyCards = computed(() => {
-  let filteredCards = deckId.value 
-    ? store.cards.filter(card => card.deckId === deckId.value)
-    : store.cards
+  let filteredCards = store.cards
+
+  if (deckId.value) {
+    filteredCards = store.cards.filter(card => card.deckId === deckId.value)
+  } else if (route.query.decks) {
+    const deckIds = (route.query.decks as string).split(',')
+    filteredCards = store.cards.filter(card => deckIds.includes(card.deckId))
+  }
 
   const dueCards = getDueCards(filteredCards)
   const newCards = getNewCards(filteredCards, store.settings.dailyNewCardLimit)
