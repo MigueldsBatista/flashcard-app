@@ -6,7 +6,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
 node_modules
 .DS_Store
 dist
@@ -37,3 +36,5 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+.vercel
+.env*.local
