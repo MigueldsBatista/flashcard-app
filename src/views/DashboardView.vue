@@ -1,17 +1,44 @@
 <script setup lang="ts">
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import Checkbox from '@/components/ui/Checkbox.vue'
 import Progress from '@/components/ui/Progress.vue'
+import Tabs from '@/components/ui/Tabs.vue'
 import { useNotifications } from '@/composables/useNotifications'
 import { useFlashcardStore } from '@/stores/flashcard'
-import { Brain, Calendar, Flame, Target, TrendingUp, Zap } from 'lucide-vue-next'
+import { Brain, Calendar, Filter, Flame, Target, TrendingUp, Zap } from 'lucide-vue-next'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const store = useFlashcardStore()
 const { success } = useNotifications()
 
+const studyMode = ref('random')
+const selectedDecks = ref<string[]>([])
+
+const studyTabs = [
+  { id: 'random', label: 'Modo Aleatório', icon: Zap },
+  { id: 'select', label: 'Selecionar Baralhos', icon: Filter },
+]
+
+function toggleDeckSelection(deckId: string, isSelected: boolean) {
+  if (isSelected) {
+    selectedDecks.value.push(deckId)
+  } else {
+    selectedDecks.value = selectedDecks.value.filter(id => id !== deckId)
+  }
+}
+
 function startStudy() {
+  if (studyMode.value === 'select') {
+    if (selectedDecks.value.length > 0) {
+      success('Sessão de estudo iniciada!')
+      router.push({ path: '/study', query: { decks: selectedDecks.value.join(',') } })
+    }
+    return
+  }
+
   if (store.stats.dueCards > 0) {
     success('Sessão de estudo iniciada!')
     router.push('/study')
@@ -218,21 +245,65 @@ function formatCooldown(date: Date | null): string {
             </div>
           </Card>
 
-          <!-- Action Button -->
-          <Button
-            :disabled="store.stats.dueCards === 0"
-            class="w-full h-14 text-lg font-semibold rounded-xl shadow-lg"
-            @click="startStudy"
-          >
-            <template v-if="store.stats.dueCards > 0">
-              <Zap class="w-5 h-5 mr-2" />
-              Estudar Agora ({{ store.stats.dueCards }} cartões)
-            </template>
-            <template v-else>
-              <Calendar class="w-5 h-5 mr-2" />
-              {{ formatCooldown(store.stats.nextAvailableCardDate) }}
-            </template>
-          </Button>
+          <!-- Study Actions -->
+          <Card class="p-6">
+            <h2 class="text-lg font-semibold text-foreground mb-4">
+              Iniciar Sessão
+            </h2>
+            <Tabs v-model="studyMode" :tabs="studyTabs">
+              <template #default="{ activeTab }">
+                <!-- Random Mode -->
+                <div v-if="activeTab === 'random'" class="space-y-4">
+                  <p class="text-sm text-muted-foreground">
+                    Estude cartões de todos os seus baralhos misturados. O algoritmo prioriza cartões vencidos.
+                  </p>
+                  <Button
+                    :disabled="store.stats.dueCards === 0"
+                    class="w-full h-14 text-lg font-semibold rounded-xl shadow-lg"
+                    @click="startStudy"
+                  >
+                    <template v-if="store.stats.dueCards > 0">
+                      <Zap class="w-5 h-5 mr-2" />
+                      Estudar Agora ({{ store.stats.dueCards }} cartões)
+                    </template>
+                    <template v-else>
+                      <Calendar class="w-5 h-5 mr-2" />
+                      {{ formatCooldown(store.stats.nextAvailableCardDate) }}
+                    </template>
+                  </Button>
+                </div>
+
+                <!-- Select Mode -->
+                <div v-if="activeTab === 'select'" class="space-y-4">
+                  <p class="text-sm text-muted-foreground">
+                    Selecione os baralhos que deseja estudar nesta sessão.
+                  </p>
+                  
+                  <div class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
+                    <div v-if="store.decks.length === 0" class="text-center text-sm text-muted-foreground py-4">
+                      Nenhum baralho encontrado.
+                    </div>
+                    <div v-for="deck in store.decks" :key="deck.id" class="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md">
+                      <Checkbox 
+                        :model-value="selectedDecks.includes(deck.id)"
+                        :label="deck.name"
+                        @update:model-value="(val) => toggleDeckSelection(deck.id, val)"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    :disabled="selectedDecks.length === 0"
+                    class="w-full h-14 text-lg font-semibold rounded-xl shadow-lg"
+                    @click="startStudy"
+                  >
+                    <Filter class="w-5 h-5 mr-2" />
+                    Estudar Selecionados ({{ selectedDecks.length }})
+                  </Button>
+                </div>
+              </template>
+            </Tabs>
+          </Card>
         </div>
       </div>
     </div>
