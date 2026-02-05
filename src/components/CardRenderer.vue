@@ -29,6 +29,34 @@ const md = new MarkdownIt({
   },
 })
 
+const renderLatexContent = (content: string): string => {
+  const regex = /(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g
+  
+  return content.split(regex).map(part => {
+    if (part.startsWith('$$') && part.endsWith('$$')) {
+      try {
+        return katex.renderToString(part.slice(2, -2), { displayMode: true, throwOnError: false })
+      } catch {
+        return part
+      }
+    } else if (part.startsWith('$') && part.endsWith('$')) {
+      try {
+        return katex.renderToString(part.slice(1, -1), { displayMode: false, throwOnError: false })
+      } catch {
+        return part
+      }
+    } else {
+      return part
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/\n/g, '<br>')
+    }
+  }).join('')
+}
+
 const isOcclusion = computed(() => props.card.content.type === 'occlusion')
 
 const renderedFront = computed(() => {
@@ -56,7 +84,8 @@ const renderedBack = computed(() => {
     
     case 'latex':
       try {
-        return `<div class="flex items-center justify-center p-4 bg-card rounded-lg">${katex.renderToString(content.back, { displayMode: true })}</div>`
+        const rendered = renderLatexContent(content.back)
+        return `<div class="p-4 bg-card rounded-lg text-left w-full">${rendered}</div>`
       } catch (error) {
         return `<div class="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
           <p class="text-destructive text-sm">Erro ao renderizar LaTeX</p>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth';
-import { BarChart3, FolderOpen, Home, LogOut, Settings } from 'lucide-vue-next';
+import { BarChart3, FolderOpen, Home, LogOut, Settings, Sparkles } from 'lucide-vue-next';
 
 interface Props {
   currentView: string
@@ -17,6 +17,7 @@ const authStore = useAuthStore()
 const navItems = [
   { id: 'home', icon: Home, label: 'Início' },
   { id: 'decks', icon: FolderOpen, label: 'Baralhos' },
+  { id: 'ai-generate', icon: Sparkles, label: 'Gerar com IA' },
   { id: 'stats', icon: BarChart3, label: 'Estatísticas' },
   { id: 'settings', icon: Settings, label: 'Ajustes' },
 ]

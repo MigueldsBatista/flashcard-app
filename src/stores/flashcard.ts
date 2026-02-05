@@ -4,6 +4,7 @@ import {
     calculateReadinessScore,
     getDueCards,
 } from '@/services/spaced-repetition'
+import { useAuthStore } from '@/stores/auth'
 import type { Card, CardDifficulty, Deck, StudySession, StudyStats, UserSettings } from '@/types/flashcard'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -140,7 +141,8 @@ export const useFlashcardStore = defineStore('flashcard', () => {
     async function fetchAll() {
         loading.value = true
 
-        const { data: { user } } = await supabase.auth.getUser()
+        const authStore = useAuthStore()
+        const user = authStore.user
         if (!user) return
 
         // Fetch Decks
@@ -204,9 +206,13 @@ export const useFlashcardStore = defineStore('flashcard', () => {
         loading.value = false
     }
 
-    async function addDeck(deck: Omit<Deck, 'id' | 'created' | 'updated'>) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+    async function addDeck(deck: Omit<Deck, 'id' | 'created' | 'updated'>): Promise<Deck | null> {
+        const authStore = useAuthStore()
+        const user = authStore.user
+        if (!user) {
+            console.error('addDeck: No user logged in')
+            return null
+        }
 
         const { data, error } = await supabase
             .from('decks')
@@ -220,17 +226,28 @@ export const useFlashcardStore = defineStore('flashcard', () => {
             .select()
             .single()
 
-        if (data && !error) {
-            decks.value.push({
-                id: data.id!,
+        if (error?.message) {
+            console.error('addDeck error:', error)
+            return null
+        }
+
+        if (data && data.id) {
+            const newDeck: Deck = {
+                id: data.id,
                 name: data.name,
                 description: data.description || undefined,
                 parentId: data.parent_id || undefined,
                 color: data.color || undefined,
                 created: new Date(data.created_at),
                 updated: new Date(data.updated_at)
-            })
+            }
+            decks.value.push(newDeck)
+            console.log('addDeck success:', newDeck)
+            return newDeck
         }
+
+        console.error('addDeck: data or data.id missing', data)
+        return null
     }
 
     async function updateDeck(id: string, updates: Partial<Deck>) {
@@ -274,7 +291,8 @@ export const useFlashcardStore = defineStore('flashcard', () => {
     }
 
     async function addCard(card: Omit<Card, 'id' | 'created'>) {
-        const { data: { user } } = await supabase.auth.getUser()
+        const authStore = useAuthStore()
+        const user = authStore.user
         if (!user) return
 
         const { data, error } = await supabase
@@ -392,7 +410,8 @@ export const useFlashcardStore = defineStore('flashcard', () => {
 
     async function endStudySession() {
         if (currentSession.value) {
-            const { data: { user } } = await supabase.auth.getUser()
+            const authStore = useAuthStore()
+            const user = authStore.user
             if (user) {
                 const sessionToSave = {
                     user_id: user.id,

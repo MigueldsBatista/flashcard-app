@@ -215,6 +215,17 @@ function handleCancelOcclusion() {
             {{ deckCards.length }} {{ deckCards.length === 1 ? 'cartão' : 'cartões' }}
           </p>
         </div>
+        
+        <!-- Desktop Create Button -->
+        <div class="hidden md:block">
+          <Button 
+            class="flex items-center gap-2 px-6 shadow-md"
+            @click="handleOpenCreate"
+          >
+            <FilePlus class="w-5 h-5" />
+            <span>Novo Cartão</span>
+          </Button>
+        </div>
       </div>
 
       <!-- Create/Edit Dialog -->
@@ -384,9 +395,9 @@ function handleCancelOcclusion() {
       </div>
     </div>
 
-    <!-- Floating Action Button - with label for cards -->
+    <!-- Floating Action Button - hidden on desktop -->
     <button
-      class="fixed bottom-24 right-4 bg-primary hover:bg-primary-hover text-primary-foreground rounded-full shadow-lg flex items-center gap-2 px-4 py-3 transition-all active:scale-95 z-30"
+      class="fixed bottom-24 right-4 bg-primary hover:bg-primary-hover text-primary-foreground rounded-full shadow-lg flex items-center gap-2 px-4 py-3 transition-all active:scale-95 z-30 md:hidden"
       @click="handleOpenCreate"
     >
       <FilePlus class="w-5 h-5" />
