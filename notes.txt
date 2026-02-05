@@ -5,3 +5,11 @@
 - eu removi manualmente esses pontos aq, NAO adicione de volta, vou te explicar ...nao eh necessario o contexto adicional para o a aba texto (componente) no modo gerar IA, alem disso a aba de descricao tambem nao eh necessaria, poderiamos so disponibilizar a opcao de quantidade de cards na imagem e a descricao opcional apenas no campo de imagem, pois na aba texto, o memso ja atua como uma descricao
 
 - devemos ter um limite para a quantidade possivel de cards que podem ser gerados, caso ja exista no backend, adicionamos tambem no frontend
+
+
+Dica para o seu PRD (IA e OCR)
+Como você mencionou o uso de OCR e Safe Guards no seu PRD, no FastAPI você poderá usar a biblioteca google-generativeai que já faz o OCR nativamente se você enviar a imagem diretamente para o modelo Gemini 1.5 Flash. Isso economiza tokens e complexidade de código.
+
+- consertar as metricas e estatisticas
+- tirar foto direto da camera ao inves de abrir a galeria
+- consertar e persistir settings
