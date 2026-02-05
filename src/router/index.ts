@@ -42,6 +42,11 @@ const routes = [
         component: StatisticsView,
     },
     {
+        path: '/ai-generate',
+        name: 'ai-generate',
+        component: () => import('@/views/AIGeneratorView.vue'),
+    },
+    {
         path: '/settings',
         name: 'settings',
         component: SettingsView,

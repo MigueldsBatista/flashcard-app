@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import Dialog from '@/components/ui/Dialog.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import { useFlashcardStore } from '@/stores/flashcard'
 import type { Deck } from '@/types/flashcard'
@@ -98,17 +99,85 @@ function handleDeleteDeck(deck: Deck) {
         </div>
         
         <!-- Desktop Create Button -->
-        <Button 
-          class="hidden md:flex items-center gap-2 px-6 shadow-md"
-          @click="isCreating = true"
-        >
-          <FolderPlus class="w-5 h-5" />
-          <span>Criar Novo Baralho</span>
-        </Button>
+        <div class="hidden md:block">
+          <Button 
+            class="flex items-center gap-2 px-6 shadow-md"
+            @click="isCreating = true"
+          >
+            <FolderPlus class="w-5 h-5" />
+            <span>Criar Novo Baralho</span>
+          </Button>
+        </div>
       </div>
 
-      <!-- Create/Edit Dialogs ... (unchanged) -->
-      <!-- [KEEPING DIALOGS AS THEY ARE SINCE THEY ARE MODAL] -->
+      <!-- Create/Edit Dialog -->
+      <Dialog 
+        :open="isCreating || editingDeck !== null" 
+        @update:open="(v) => { if (!v) { isCreating = false; editingDeck = null; resetForm() } }"
+      >
+        <template #default="{ close }">
+          <div class="space-y-4">
+            <h2 class="text-lg font-semibold text-foreground">
+              {{ editingDeck ? 'Editar Baralho' : 'Novo Baralho' }}
+            </h2>
+
+            <div>
+              <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
+                Nome
+              </label>
+              <input
+                v-model="newDeckName"
+                type="text"
+                placeholder="Nome do baralho"
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
+                Descrição (opcional)
+              </label>
+              <textarea
+                v-model="newDeckDescription"
+                placeholder="Descrição do baralho"
+                rows="2"
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-muted-foreground mb-2 block">
+                Cor
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="color in colorOptions"
+                  :key="color.value"
+                  type="button"
+                  class="w-8 h-8 rounded-lg transition-all"
+                  :class="newDeckColor === color.value ? 'ring-2 ring-offset-2 ring-primary' : 'hover:scale-110'"
+                  :style="{ backgroundColor: color.value }"
+                  :title="color.name"
+                  @click="newDeckColor = color.value"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+              <Button variant="outline" class="sm:flex-none" @click="close(); resetForm()">
+                Cancelar
+              </Button>
+              <Button
+                :disabled="!newDeckName.trim()"
+                class="flex-1"
+                @click="editingDeck ? handleUpdateDeck() : handleCreateDeck()"
+              >
+                {{ editingDeck ? 'Salvar' : 'Criar' }}
+              </Button>
+            </div>
+          </div>
+        </template>
+      </Dialog>
 
       <!-- Deck List - responsive grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -160,22 +229,22 @@ function handleDeleteDeck(deck: Deck) {
                   </div>
                 </div>
 
-                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="sm"
-                    class="h-8 w-8 p-0"
+                    class="h-10 w-10 md:h-8 md:w-8 p-0"
                     @click.stop="handleEditDeck(deck)"
                   >
-                    <Edit class="w-4 h-4" />
+                    <Edit class="w-5 h-5 md:w-4 md:h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    class="h-8 w-8 p-0"
+                    class="h-10 w-10 md:h-8 md:w-8 p-0"
                     @click.stop="handleDeleteDeck(deck)"
                   >
-                    <Trash2 class="w-4 h-4 text-destructive" />
+                    <Trash2 class="w-5 h-5 md:w-4 md:h-4 text-destructive" />
                   </Button>
                 </div>
               </div>

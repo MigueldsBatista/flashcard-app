@@ -40,26 +40,14 @@ watch(() => authStore.user, async (user) => {
 })
 
 function handleNavigate(view: string) {
-  switch (view) {
-    case 'home':
-      router.push('/')
-      break
-    case 'decks':
-      router.push('/decks')
-      break
-    case 'stats':
-      router.push('/stats')
-      break
-    case 'settings':
-      router.push('/settings')
-      break
-  }
+  router.push({name: view})
 }
 
 const currentView = computed(() => {
   const name = route.name as string
   if (name === 'home') return 'home'
   if (name === 'decks' || name === 'editCards') return 'decks'
+  if (name === 'ai-generate') return 'ai-generate'
   if (name === 'stats') return 'stats'
   if (name === 'settings') return 'settings'
   if (name === 'study' || name === 'studyDeck') return 'study'

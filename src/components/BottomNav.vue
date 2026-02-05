@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BarChart3, FolderOpen, Home, Settings } from 'lucide-vue-next';
+import { BarChart3, FolderOpen, Home, Sparkles } from 'lucide-vue-next';
 
 interface Props {
   currentView: string
@@ -14,8 +14,8 @@ const emit = defineEmits<{
 const navItems = [
   { id: 'home', icon: Home, label: 'Início' },
   { id: 'decks', icon: FolderOpen, label: 'Baralhos' },
+  { id: 'ai-generate', icon: Sparkles, label: 'IA' },
   { id: 'stats', icon: BarChart3, label: 'Estatísticas' },
-  { id: 'settings', icon: Settings, label: 'Ajustes' },
 ]
 </script>
 

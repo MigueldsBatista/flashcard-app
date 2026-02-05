@@ -1,3 +1,8 @@
 fastapi
 pytesseract
 uvicorn
+google-genai
+pydantic>=2.0
+python-multipart
+pillow
+python-dotenv
