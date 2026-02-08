@@ -1,16 +1,26 @@
 """
 Vision Engine Module
-Handles OCR text extraction and image processing/compression.
+Handles OCR text extraction using Gemini Vision API and image processing/compression.
 """
 
 import io
+import os
+import base64
 from PIL import Image
-import pytesseract
+from google import genai
+
+
+def get_gemini_client() -> genai.Client:
+    """Get Gemini client with API key from environment."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable not set")
+    return genai.Client(api_key=api_key)
 
 
 def extract_text(image_bytes: bytes) -> str:
     """
-    Extract text from image using Tesseract OCR.
+    Extract text from image using Gemini Vision API.
     
     Args:
         image_bytes: Raw image bytes
@@ -19,6 +29,7 @@ def extract_text(image_bytes: bytes) -> str:
         Extracted text from the image
     """
     try:
+        # Convert image to base64
         image = Image.open(io.BytesIO(image_bytes))
         
         # Convert to RGB if necessary (handles PNGs with transparency)
@@ -31,12 +42,51 @@ def extract_text(image_bytes: bytes) -> str:
         elif image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Use tesseract with Portuguese + English languages
-        text = pytesseract.image_to_string(image, lang='por+eng')
+        # Resize if image is too large (max 1024px on longest side)
+        max_size = 1024
+        if max(image.size) > max_size:
+            ratio = max_size / max(image.size)
+            new_size = (int(image.width * ratio), int(image.height * ratio))
+            image = image.resize(new_size, Image.Resampling.LANCZOS)
         
-        return text.strip()
+        # Convert to JPEG bytes and base64
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG', quality=85)
+        buffer.seek(0)
+        base64_image = base64.b64encode(buffer.read()).decode('utf-8')
+        
+        # Use Gemini Vision to extract text
+        client = get_gemini_client()
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=[
+                {
+                    "parts": [
+                        {"text": "Extraia todo o texto visível desta imagem. Retorne APENAS o texto extraído, sem formatação adicional, comentários ou explicações. Se houver múltiplas colunas ou seções, mantenha a ordem de leitura natural."},
+                        {
+                            "inline_data": {
+                                "mime_type": "image/jpeg",
+                                "data": base64_image
+                            }
+                        }
+                    ]
+                }
+            ],
+            config={
+                'temperature': 0.1,
+                'max_output_tokens': 4096
+            }
+        )
+        
+        extracted_text = response.text.strip() if response.text else ""
+        
+        if not extracted_text:
+            raise ValueError("Não foi possível extrair texto da imagem")
+            
+        return extracted_text
+        
     except Exception as e:
-        raise ValueError(f"Failed to extract text from image: {str(e)}")
+        raise ValueError(f"Falha ao extrair texto da imagem: {str(e)}")
 
 
 def compress_image(image_bytes: bytes, max_size: int = 1024, quality: int = 85) -> bytes:
