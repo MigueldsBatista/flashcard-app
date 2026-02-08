@@ -2,8 +2,8 @@
 import OcclusionColorPicker from '@/components/OcclusionColorPicker.vue'
 import Button from '@/components/ui/Button.vue'
 import UndoRedoControls from '@/components/UndoRedoControls.vue'
-import { useOcclusionHistory } from '@/composables/useOcclusionHistory'
 import type { ImageOcclusion } from '@/types/flashcard'
+import { useManualRefHistory } from '@vueuse/core'
 import { Check, Minus, Plus, RotateCcw, Trash2, X, ZoomIn } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
@@ -38,9 +38,14 @@ const zoom = ref(1)
 const MIN_ZOOM = 0.5
 const MAX_ZOOM = 4
 
+// Touch state for pinch detection
+const initialPinchDistance = ref<number | null>(null)
+const initialPinchZoom = ref(1)
+const isTouchInteracting = ref(false)
+
 // Interaction modes
-type InteractionMode = 'draw' | 'move' | 'resize'
-const interactionMode = ref<InteractionMode>('draw')
+type InteractionMode = 'draw' | 'move' | 'resize' | 'none'
+const interactionMode = ref<InteractionMode>('none')
 const isInteracting = ref(false)
 const startPoint = ref<{ x: number; y: number } | null>(null)
 const currentRect = ref<{ x: number; y: number; width: number; height: number } | null>(null)
@@ -51,8 +56,19 @@ const activeHandle = ref<ResizeHandle>(null)
 const resizeStartRect = ref<ImageOcclusion | null>(null)
 const moveStartOcclusion = ref<ImageOcclusion | null>(null)
 
-// History
-const { undo, redo, canUndo, canRedo } = useOcclusionHistory(localOcclusions)
+// History with manual commits
+const { history, commit, undo, redo, canUndo, canRedo, clear: clearHistory } = useManualRefHistory(
+  localOcclusions,
+  {
+    capacity: 50,
+    clone: (v) => JSON.parse(JSON.stringify(v)),
+  }
+)
+
+// Commit a snapshot to history
+function commitToHistory() {
+  commit()
+}
 
 // Keyboard shortcuts
 function handleKeyDown(event: KeyboardEvent) {
@@ -61,9 +77,15 @@ function handleKeyDown(event: KeyboardEvent) {
   if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
     if (event.shiftKey) {
-      if (canRedo.value) redo()
+      if (canRedo.value) {
+        redo()
+        redrawCanvas()
+      }
     } else {
-      if (canUndo.value) undo()
+      if (canUndo.value) {
+        undo()
+        redrawCanvas()
+      }
     }
   }
   
@@ -89,6 +111,8 @@ watch(() => props.open, (isOpen) => {
     localOcclusions.value = JSON.parse(JSON.stringify(props.occlusions))
     selectedOcclusionId.value = null
     zoom.value = 1
+    clearHistory() // Clear history
+    commit() // Commit initial state
     nextTick(() => loadImage())
   }
 }, { immediate: true })
@@ -115,7 +139,7 @@ function setupCanvas() {
 
   if (!canvas || !container || !img) return
 
-  const containerWidth = container.clientWidth - 32 // Padding
+  const containerWidth = container.clientWidth - 32
   const containerHeight = container.clientHeight - 32
   
   const scaleX = containerWidth / img.width
@@ -152,25 +176,22 @@ function redrawCanvas() {
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
-  // Draw occlusions with SOLID colors
+  // Draw occlusions
   localOcclusions.value.forEach((occ, index) => {
     const x = occ.x * internalScale
     const y = occ.y * internalScale
     const width = occ.width * internalScale
     const height = occ.height * internalScale
     const isSelected = selectedOcclusionId.value === occ.id
-    const color = occ.label || occlusionColor.value // Use stored color or current
+    const color = occ.label || occlusionColor.value
 
-    // Draw SOLID filled rectangle
     ctx.fillStyle = color
     ctx.fillRect(x, y, width, height)
 
-    // Draw border
     ctx.strokeStyle = isSelected ? 'white' : 'rgba(0,0,0,0.3)'
     ctx.lineWidth = isSelected ? 3 * dpr : 1 * dpr
     ctx.strokeRect(x, y, width, height)
 
-    // Draw label number
     ctx.fillStyle = 'white'
     ctx.strokeStyle = 'rgba(0,0,0,0.5)'
     ctx.lineWidth = 2 * dpr
@@ -181,7 +202,6 @@ function redrawCanvas() {
     ctx.strokeText(`${index + 1}`, x + width / 2, y + height / 2)
     ctx.fillText(`${index + 1}`, x + width / 2, y + height / 2)
 
-    // Draw resize handles for selected
     if (isSelected) {
       drawResizeHandles(ctx, x, y, width, height, dpr)
     }
@@ -214,12 +234,13 @@ function drawResizeHandles(
   height: number,
   dpr: number
 ) {
-  const handleSize = 10 * dpr
+  // Larger handles for touch
+  const handleSize = 14 * dpr
   const halfHandle = handleSize / 2
   
   ctx.fillStyle = 'white'
   ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-  ctx.lineWidth = 1.5 * dpr
+  ctx.lineWidth = 2 * dpr
 
   const handles = [
     { x: x - halfHandle, y: y - halfHandle },
@@ -233,14 +254,17 @@ function drawResizeHandles(
   ]
 
   handles.forEach(handle => {
-    ctx.fillRect(handle.x, handle.y, handleSize, handleSize)
-    ctx.strokeRect(handle.x, handle.y, handleSize, handleSize)
+    ctx.beginPath()
+    ctx.arc(handle.x + halfHandle, handle.y + halfHandle, halfHandle, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
   })
 }
 
 function getHandleAtPosition(x: number, y: number, occ: ImageOcclusion): ResizeHandle {
-  const handleSize = 16
-  const halfHandle = handleSize / 2
+  // Much larger hit area for touch (30px)
+  const hitSize = 30
+  const halfHit = hitSize / 2
 
   const handles: { pos: { x: number; y: number }; handle: ResizeHandle }[] = [
     { pos: { x: occ.x, y: occ.y }, handle: 'nw' },
@@ -255,10 +279,10 @@ function getHandleAtPosition(x: number, y: number, occ: ImageOcclusion): ResizeH
 
   for (const { pos, handle } of handles) {
     if (
-      x >= pos.x - halfHandle &&
-      x <= pos.x + halfHandle &&
-      y >= pos.y - halfHandle &&
-      y <= pos.y + halfHandle
+      x >= pos.x - halfHit &&
+      x <= pos.x + halfHit &&
+      y >= pos.y - halfHit &&
+      y <= pos.y + halfHit
     ) {
       return handle
     }
@@ -267,26 +291,13 @@ function getHandleAtPosition(x: number, y: number, occ: ImageOcclusion): ResizeH
   return null
 }
 
-function getCanvasCoordinates(event: MouseEvent | TouchEvent): { x: number; y: number } {
+function getCanvasCoordinates(event: MouseEvent | Touch): { x: number; y: number } {
   const canvas = canvasRef.value
   if (!canvas) return { x: 0, y: 0 }
 
   const rect = canvas.getBoundingClientRect()
-  let clientX: number
-  let clientY: number
-
-  if ('touches' in event && event.touches.length > 0) {
-    clientX = event.touches[0]!.clientX
-    clientY = event.touches[0]!.clientY
-  } else if ('changedTouches' in event && event.changedTouches.length > 0) {
-    clientX = event.changedTouches[0]!.clientX
-    clientY = event.changedTouches[0]!.clientY
-  } else if ('clientX' in event) {
-    clientX = event.clientX
-    clientY = event.clientY
-  } else {
-    return { x: 0, y: 0 }
-  }
+  const clientX = event.clientX
+  const clientY = event.clientY
 
   const x = (clientX - rect.left) / (canvasScale.value * zoom.value)
   const y = (clientY - rect.top) / (canvasScale.value * zoom.value)
@@ -294,15 +305,88 @@ function getCanvasCoordinates(event: MouseEvent | TouchEvent): { x: number; y: n
   return { x, y }
 }
 
+function getPinchDistance(touches: TouchList): number {
+  const touch1 = touches[0]!
+  const touch2 = touches[1]!
+  const dx = touch2.clientX - touch1.clientX
+  const dy = touch2.clientY - touch1.clientY
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
 function generateId(): string {
   return `occ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
-function handlePointerDown(event: MouseEvent | TouchEvent) {
+// Mouse event handlers
+function handleMouseDown(event: MouseEvent) {
   if (!imageLoaded.value) return
+  handlePointerDown(getCanvasCoordinates(event))
+}
 
-  const coords = getCanvasCoordinates(event)
+function handleMouseMove(event: MouseEvent) {
+  if (!isInteracting.value || !startPoint.value) return
+  handlePointerMove(getCanvasCoordinates(event))
+}
 
+function handleMouseUp() {
+  handlePointerUp()
+}
+
+// Touch event handlers with pinch detection
+function handleTouchStart(event: TouchEvent) {
+  if (!imageLoaded.value) return
+  event.preventDefault()
+
+  // Two finger touch = pinch zoom
+  if (event.touches.length === 2) {
+    isTouchInteracting.value = false
+    isInteracting.value = false
+    initialPinchDistance.value = getPinchDistance(event.touches)
+    initialPinchZoom.value = zoom.value
+    return
+  }
+
+  // Single finger touch = interact
+  if (event.touches.length === 1) {
+    isTouchInteracting.value = true
+    handlePointerDown(getCanvasCoordinates(event.touches[0]!))
+  }
+}
+
+function handleTouchMove(event: TouchEvent) {
+  event.preventDefault()
+
+  // Two finger = pinch zoom
+  if (event.touches.length === 2 && initialPinchDistance.value !== null) {
+    const currentDistance = getPinchDistance(event.touches)
+    const scale = currentDistance / initialPinchDistance.value
+    zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.value * scale))
+    return
+  }
+
+  // Single finger = interact
+  if (event.touches.length === 1 && isTouchInteracting.value && isInteracting.value) {
+    handlePointerMove(getCanvasCoordinates(event.touches[0]!))
+  }
+}
+
+function handleTouchEnd(event: TouchEvent) {
+  event.preventDefault()
+
+  // Reset pinch state
+  if (initialPinchDistance.value !== null) {
+    initialPinchDistance.value = null
+    return
+  }
+
+  if (isTouchInteracting.value) {
+    handlePointerUp()
+    isTouchInteracting.value = false
+  }
+}
+
+// Unified pointer handlers
+function handlePointerDown(coords: { x: number; y: number }) {
   // Check if clicking on a resize handle of selected occlusion
   if (selectedOcclusionId.value) {
     const selectedOcc = localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
@@ -328,8 +412,8 @@ function handlePointerDown(event: MouseEvent | TouchEvent) {
   )
 
   if (clickedOcclusion) {
-    // If already selected, start moving
     if (selectedOcclusionId.value === clickedOcclusion.id) {
+      // Already selected, start moving
       interactionMode.value = 'move'
       isInteracting.value = true
       startPoint.value = coords
@@ -350,10 +434,8 @@ function handlePointerDown(event: MouseEvent | TouchEvent) {
   currentRect.value = { x: coords.x, y: coords.y, width: 0, height: 0 }
 }
 
-function handlePointerMove(event: MouseEvent | TouchEvent) {
-  if (!isInteracting.value || !startPoint.value) return
-
-  const coords = getCanvasCoordinates(event)
+function handlePointerMove(coords: { x: number; y: number }) {
+  if (!startPoint.value) return
 
   if (interactionMode.value === 'resize' && activeHandle.value && resizeStartRect.value) {
     const dx = coords.x - startPoint.value.x
@@ -434,17 +516,21 @@ function handlePointerMove(event: MouseEvent | TouchEvent) {
 
 function handlePointerUp() {
   if (interactionMode.value === 'resize') {
+    commitToHistory()
     isInteracting.value = false
     activeHandle.value = null
     resizeStartRect.value = null
     startPoint.value = null
+    interactionMode.value = 'none'
     return
   }
 
   if (interactionMode.value === 'move') {
+    commitToHistory()
     isInteracting.value = false
     moveStartOcclusion.value = null
     startPoint.value = null
+    interactionMode.value = 'none'
     return
   }
 
@@ -457,16 +543,18 @@ function handlePointerUp() {
         y: currentRect.value.y,
         width: currentRect.value.width,
         height: currentRect.value.height,
-        label: occlusionColor.value, // Store the color
+        label: occlusionColor.value,
       }
       localOcclusions.value.push(newOcclusion)
       selectedOcclusionId.value = newOcclusion.id
+      commitToHistory()
     }
   }
 
   isInteracting.value = false
   startPoint.value = null
   currentRect.value = null
+  interactionMode.value = 'none'
   redrawCanvas()
 }
 
@@ -474,12 +562,14 @@ function deleteSelectedOcclusion() {
   if (!selectedOcclusionId.value) return
   localOcclusions.value = localOcclusions.value.filter(o => o.id !== selectedOcclusionId.value)
   selectedOcclusionId.value = null
+  commitToHistory()
   redrawCanvas()
 }
 
 function clearAllOcclusions() {
   localOcclusions.value = []
   selectedOcclusionId.value = null
+  commitToHistory()
   redrawCanvas()
 }
 
@@ -525,12 +615,12 @@ watch(occlusionColor, (newColor) => {
     const occ = localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
     if (occ) {
       occ.label = newColor
+      commitToHistory()
       redrawCanvas()
     }
   }
 })
 
-// Watch zoom changes
 watch(zoom, () => {
   redrawCanvas()
 })
@@ -559,7 +649,7 @@ onUnmounted(() => {
         class="fixed inset-0 z-50 flex flex-col backdrop-blur-xl bg-black/70"
       >
         <!-- Header Toolbar -->
-        <div class="shrink-0 bg-background/90 backdrop-blur border-b border-border px-3 py-2 sm:px-4 sm:py-3">
+        <div class="shrink-0 bg-background/90 backdrop-blur border-b border-border px-3 py-2 sm:px-4 sm:py-3 safe-area-top">
           <div class="flex items-center gap-2 sm:gap-3 max-w-5xl mx-auto">
             <!-- Color Picker -->
             <OcclusionColorPicker v-model="occlusionColor" />
@@ -568,8 +658,8 @@ onUnmounted(() => {
             <UndoRedoControls
               :can-undo="canUndo"
               :can-redo="canRedo"
-              @undo="undo"
-              @redo="redo"
+              @undo="() => { undo(); redrawCanvas() }"
+              @redo="() => { redo(); redrawCanvas() }"
             />
 
             <!-- Divider -->
@@ -643,7 +733,7 @@ onUnmounted(() => {
         <!-- Canvas Area -->
         <div
           ref="containerRef"
-          class="flex-1 overflow-auto flex items-center justify-center p-4"
+          class="flex-1 overflow-auto flex items-center justify-center p-4 touch-none"
           @wheel="handleWheel"
         >
           <div
@@ -669,23 +759,23 @@ onUnmounted(() => {
 
             <canvas
               ref="canvasRef"
-              class="block shadow-2xl rounded-lg cursor-crosshair"
-              @mousedown="handlePointerDown"
-              @mousemove="handlePointerMove"
-              @mouseup="handlePointerUp"
-              @mouseleave="handlePointerUp"
-              @touchstart.prevent="handlePointerDown"
-              @touchmove.prevent="handlePointerMove"
-              @touchend.prevent="handlePointerUp"
+              class="block shadow-2xl rounded-lg cursor-crosshair touch-none"
+              @mousedown="handleMouseDown"
+              @mousemove="handleMouseMove"
+              @mouseup="handleMouseUp"
+              @mouseleave="handleMouseUp"
+              @touchstart="handleTouchStart"
+              @touchmove="handleTouchMove"
+              @touchend="handleTouchEnd"
             />
           </div>
         </div>
 
         <!-- Footer -->
-        <div class="shrink-0 bg-background/90 backdrop-blur border-t border-border p-3 sm:p-4">
+        <div class="shrink-0 bg-background/90 backdrop-blur border-t border-border p-3 sm:p-4 safe-area-bottom">
           <div class="flex items-center justify-between gap-3 max-w-5xl mx-auto">
             <div class="text-sm text-muted-foreground">
-              {{ localOcclusions.length }} área(s) de oclusão
+              {{ localOcclusions.length }} área(s)
             </div>
             <div class="flex gap-2">
               <Button
