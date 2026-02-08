@@ -27,3 +27,7 @@ export default defineConfig({
     },
   },
 })
+// Source - https://stackoverflow.com/a/63781351
+// Posted by Akbar Pulatov, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-02-08, License - CC BY-SA 4.0
+// WSL port forwarding: netsh interface portproxy add v4tov4 listenport=5173 listenaddress=0.0.0.0 connectport=5173 connectaddress=172.28.196.34
