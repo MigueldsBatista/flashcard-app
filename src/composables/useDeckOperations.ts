@@ -3,91 +3,16 @@
  * Provides proper async state management with loading, error, and data states.
  */
 
-import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/stores/auth'
+import { deckService } from '@/services/provider'
+import type { DeckCreateInput } from '@/services/types'
 import type { Deck } from '@/types/flashcard'
 import { useAsyncState } from '@vueuse/core'
 import { computed, ref } from 'vue'
-
-// Types
-export interface DeckCreateInput {
-    name: string
-    description?: string
-    parentId?: string
-    color?: string
-}
 
 export interface DeckOperationResult<T> {
     data: T | null
     error: string | null
     success: boolean
-}
-
-/**
- * Create a deck using Supabase.
- * Standalone async function for use with useAsyncState.
- */
-async function createDeckAsync(input: DeckCreateInput): Promise<Deck> {
-    // Get current user from auth store
-    const authStore = useAuthStore()
-    const user = authStore.user
-
-    if (!user) {
-        throw new Error('Usuário não autenticado')
-    }
-
-    // Insert deck
-    const { data, error: insertError } = await supabase
-        .from('decks')
-        .insert({
-            user_id: user.id,
-            name: input.name,
-            description: input.description || null,
-            parent_id: input.parentId || null,
-            color: input.color || null
-        })
-        .select()
-        .single()
-
-    if (insertError) {
-        throw new Error(`Erro ao criar baralho: ${insertError.message}`)
-    }
-
-    if (!data || !data.id) {
-        throw new Error('Resposta inválida do servidor')
-    }
-
-    // Transform to Deck type
-    const newDeck: Deck = {
-        id: data.id,
-        name: data.name,
-        description: data.description || undefined,
-        parentId: data.parent_id || undefined,
-        color: data.color || undefined,
-        created: new Date(data.created_at),
-        updated: new Date(data.updated_at)
-    }
-
-    console.log('createDeck success:', newDeck)
-    return newDeck
-}
-
-/**
- * Check if a deck with the given name already exists.
- */
-async function checkDeckExistsAsync(name: string): Promise<boolean> {
-    const authStore = useAuthStore()
-    const user = authStore.user
-    if (!user) return false
-
-    const { data, error } = await supabase
-        .from('decks')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('name', name)
-        .maybeSingle()
-
-    return !error && data !== null
 }
 
 export function useDeckOperations() {
@@ -106,13 +31,13 @@ export function useDeckOperations() {
             if (!pendingInput.value) {
                 throw new Error('No input provided')
             }
-            return await createDeckAsync(pendingInput.value)
+            return await deckService.create(pendingInput.value)
         },
         null as Deck | null,
         {
-            immediate: false, // Don't execute on mount
+            immediate: false,
             resetOnExecute: true,
-            throwError: false, // Handle errors via the error ref
+            throwError: false,
         }
     )
 
@@ -125,7 +50,7 @@ export function useDeckOperations() {
     } = useAsyncState(
         async () => {
             if (!pendingCheckName.value) return false
-            return await checkDeckExistsAsync(pendingCheckName.value)
+            return await deckService.existsByName(pendingCheckName.value)
         },
         false,
         {

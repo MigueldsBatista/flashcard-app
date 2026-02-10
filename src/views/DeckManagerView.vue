@@ -211,7 +211,7 @@ function handleDeleteDeck(deck: Deck) {
             <div class="flex flex-col h-full">
               <div class="flex items-start gap-4 mb-4">
                 <div
-                  class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                  class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                   :style="{ backgroundColor: deck.color }"
                 >
                   <BookOpen class="w-6 h-6 text-white" />
