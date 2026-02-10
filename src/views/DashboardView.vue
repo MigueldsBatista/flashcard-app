@@ -2,6 +2,7 @@
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
 import Progress from '@/components/ui/Progress.vue'
 import Tabs from '@/components/ui/Tabs.vue'
 import { useNotifications } from '@/composables/useNotifications'
@@ -88,7 +89,11 @@ function formatCooldown(date: Date | null): string {
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <template v-if="store.loading">
+        <LoadingState message="Carregando dados..." />
+      </template>
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Left Column -->
         <div class="space-y-6">
           <!-- Readiness Score - Hero Section -->

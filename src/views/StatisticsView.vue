@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Card from '@/components/ui/Card.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
 import { useStatistics } from '@/composables/useStatistics'
 import { useFlashcardStore } from '@/stores/flashcard'
 import {
@@ -32,6 +33,7 @@ ChartJS.register(
 )
 
 const store = useFlashcardStore()
+const { loading } = store
 const { 
   chartOptions, 
   doughnutOptions, 
@@ -54,6 +56,11 @@ const {
         </p>
       </div>
 
+      <template v-if="loading">
+        <LoadingState message="Carregando estatísticas..." />
+      </template>
+
+      <template v-else>
       <!-- Key Metrics - 4 columns on desktop -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card class="p-4">
@@ -145,6 +152,7 @@ const {
           </div>
         </Card>
       </div>
+      </template>
     </div>
   </div>
 </template>

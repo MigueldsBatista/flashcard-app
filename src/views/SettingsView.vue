@@ -54,7 +54,7 @@ function handleImportData() {
           localStorage.setItem('flashcards_settings', JSON.stringify(data.settings || store.settings))
           window.location.reload()
         }
-      } catch (error) {
+      } catch  {
         alert('Erro ao importar dados. Verifique se o arquivo está correto.')
       }
     }
@@ -80,9 +80,9 @@ function toggleDarkMode(value: boolean) {
 
 <template>
   <div class="min-h-screen bg-background p-4 pb-24 md:pb-8">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-5xl mx-auto" >
       <!-- Header -->
-      <div class="mb-6">
+      <div class="mb-6" >
         <h1 class="text-2xl md:text-3xl font-bold text-foreground mb-1">
           Configurações
         </h1>
@@ -91,9 +91,9 @@ function toggleDarkMode(value: boolean) {
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start" >
         <!-- Left Column -->
-        <div class="space-y-6">
+        <div class="space-y-6" >
           <!-- Study Settings -->
           <Card class="p-6">
             <div class="flex items-center gap-2 mb-4">
@@ -163,7 +163,7 @@ function toggleDarkMode(value: boolean) {
 
               <Separator />
 
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between" v-if="false">
                 <div>
                   <label class="text-sm font-medium text-foreground flex items-center gap-2">
                     <Zap class="w-4 h-4" />
@@ -179,9 +179,9 @@ function toggleDarkMode(value: boolean) {
                 />
               </div>
 
-              <Separator />
+              <Separator v-if="false" />
 
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between" v-if="false">
                 <div>
                   <label class="text-sm font-medium text-foreground flex items-center gap-2">
                     <Volume2 class="w-4 h-4" />

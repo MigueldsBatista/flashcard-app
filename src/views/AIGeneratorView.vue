@@ -77,6 +77,7 @@ const hasInput = computed(() => {
   switch (activeTab.value) {
     case 'image': return !!imageFile.value
     case 'text': return textContent.value.trim().length > 20
+    default: return false
   }
 })
 
@@ -244,7 +245,7 @@ async function saveSelectedCards() {
     showPreview.value = false
     generatedCards.value = []
     resetForm()
-  } catch (e) {
+  } catch {
     showError('Erro ao salvar cartões')
   } finally {
     isSaving.value = false

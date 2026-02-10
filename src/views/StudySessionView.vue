@@ -7,7 +7,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { getDueCards, getNewCards, prioritizeCards } from '@/services/spaced-repetition'
 import { useFlashcardStore } from '@/stores/flashcard'
 import type { CardDifficulty } from '@/types/flashcard'
-import { ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-vue-next'
+import { ArrowLeft, Calendar, CheckCircle2, RotateCcw } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -60,12 +60,21 @@ const difficultyButtons = [
 onMounted(() => {
   if (deckId.value) {
     store.startStudySession(deckId.value)
+  } else if (route.query.decks) {
+    // Multi-deck study: use the first deck as reference
+    const deckIds = (route.query.decks as string).split(',')
+    if (deckIds[0]) {
+      store.startStudySession(deckIds[0])
+    }
   }
   window.addEventListener('keydown', handleKeyPress)
 })
 
 onUnmounted(() => {
-  store.endStudySession()
+  // Safety net: end session if it wasn't already ended by handleEndStudy
+  if (store.currentSession) {
+    store.endStudySession()
+  }
   window.removeEventListener('keydown', handleKeyPress)
 })
 
@@ -136,7 +145,8 @@ function handleComplete() {
   isAnimating.value = false
 }
 
-function handleEndStudy() {
+async function handleEndStudy() {
+  await store.endStudySession()
   success('Sessão concluída!')
   router.push('/')
 }
