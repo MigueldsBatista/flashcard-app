@@ -106,7 +106,7 @@ const {
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Tempo Hoje</p>
-              <p class="text-2xl font-bold text-foreground">{{ Math.round(store.stats.today.timeSpent) }}min</p>
+              <p class="text-2xl font-bold text-foreground">{{ store.stats.today.timeSpent >= 1 ? Math.round(store.stats.today.timeSpent) + 'min' : Math.round(store.stats.today.timeSpent * 60) + 's' }}</p>
             </div>
           </div>
         </Card>
