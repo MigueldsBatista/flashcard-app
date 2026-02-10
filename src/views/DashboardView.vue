@@ -244,7 +244,7 @@ function formatCooldown(date: Date | null): string {
               <div class="flex justify-between items-center">
                 <span class="text-muted-foreground">Tempo de Estudo Hoje</span>
                 <span class="text-lg font-semibold text-foreground">
-                  {{ Math.round(store.stats.today.timeSpent) }} min
+                  {{ store.stats.today.timeSpent >= 1 ? Math.round(store.stats.today.timeSpent) + ' min' : Math.round(store.stats.today.timeSpent * 60) + 's' }}
                 </span>
               </div>
             </div>
