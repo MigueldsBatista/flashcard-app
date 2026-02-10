@@ -6,6 +6,7 @@ import Tabs from '@/components/ui/Tabs.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import { useDeckOperations } from '@/composables/useDeckOperations'
 import { useNotifications } from '@/composables/useNotifications'
+import { aiGeneratorService } from '@/services/provider'
 import { useFlashcardStore } from '@/stores/flashcard'
 import type { CardContent } from '@/types/flashcard'
 import {
@@ -25,7 +26,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const store = useFlashcardStore()
-const { createDeck, isCreating: isDeckCreating } = useDeckOperations()
+const { createDeck } = useDeckOperations()
 const { success, error: showError } = useNotifications()
 
 // Tab state
@@ -62,7 +63,7 @@ const newDeckName = ref('')
 const isSaving = ref(false)
 
 // Card limit
-const MAX_CARDS = 20
+// const MAX_CARDS = 20
 
 // Computed
 const availableDecks = computed(() => store.decks)
@@ -130,47 +131,20 @@ async function handleGenerate() {
   generationError.value = null
   
   try {
-    const formData = new FormData()
-    
-    if (activeTab.value === 'image' && imageFile.value) {
-      formData.append('image', imageFile.value)
-      if (contextHint.value) {
-        formData.append('context', contextHint.value)
-      }
-    } else if (activeTab.value === 'text') {
-      formData.append('text', textContent.value)
-      if (contextHint.value) {
-        formData.append('context', contextHint.value)
-      }
-    } 
-    
-    // Send num_cards if it's a valid positive number
-    if (numCards.value && numCards.value > 0 && !isNaN(numCards.value)) {
-      formData.append('num_cards', numCards.value.toString())
+    const options = {
+      context: contextHint.value || undefined,
+      numCards: numCards.value && numCards.value > 0 ? numCards.value : undefined,
     }
-    
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      body: formData,
-    })
-    
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail?.error || errorData.detail || 'Erro na geração')
-    }
-    
-    const data = await response.json()
-    
-    if (data.cards && data.cards.length > 0) {
-      generatedCards.value = data.cards.map((card: any) => ({
-        content: card.content,
-        selected: true
-      }))
-      showPreview.value = true
-    } else {
-      throw new Error('Nenhum flashcard gerado. Tente com conteúdo mais detalhado.')
-    }
-    
+
+    const result = activeTab.value === 'image' && imageFile.value
+      ? await aiGeneratorService.generateFromImage(imageFile.value, options)
+      : await aiGeneratorService.generateFromText(textContent.value, options)
+
+    generatedCards.value = result.map(card => ({
+      content: card.content,
+      selected: true,
+    }))
+    showPreview.value = true
   } catch (err) {
     generationError.value = err instanceof Error ? err.message : 'Erro desconhecido'
   } finally {
@@ -380,7 +354,7 @@ function closePreview() {
 
         <!-- Error Message -->
         <div v-if="generationError" class="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
-          <AlertCircle class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+          <AlertCircle class="w-5 h-5 text-destructive shrink-0 mt-0.5" />
           <div>
             <p class="text-sm text-destructive font-medium">Erro na geração</p>
             <p class="text-sm text-muted-foreground">{{ generationError }}</p>
@@ -489,7 +463,7 @@ function closePreview() {
                 <div class="flex items-start gap-3">
                   <div
                     :class="[
-                      'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors',
+                      'w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors',
                       card.selected
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground'
