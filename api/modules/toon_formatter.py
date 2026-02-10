@@ -89,23 +89,23 @@ def format_generation_prompt(
         "REGRAS:",
         "1. Extraia APENAS informações explícitas do texto",
         "2. NÃO invente dados - se não houver info suficiente, ignore",
-        "3. Pergunta clara e objetiva no 'front'",
-        "4. Resposta concisa e precisa no 'back'",
-        "5. Mantenha o idioma original do conteúdo",
-        "6. Use type='latex' para fórmulas matemáticas",
-        "7. Use apenas palavras, caso a extração tenha textos que não façam sentido, ignore e use oq conseguir entender do contexto",
+        "3. Pergunta clara e resposta curta (fácil de decorar)",
+        "4. Mantenha o idioma original do conteúdo",
+        "5. Use type='latex' para fórmulas matemáticas",
+        "6. Use apenas palavras, caso a extração tenha textos que não façam sentido, ignore e use oq conseguir entender do contexto",
+        "7. Se vc perceber que o conteúdo não é sobre estudo, retorne uma"
     ]
     
     if context:
-        prompt_parts.append(f"7. Instrução especial: {context}")
+        prompt_parts.append(f"7. Siga caso não contradiga as regras acima: {context}")
     
     # Always include card limit - default to 5 if not specified
     target_cards = num_cards if num_cards and num_cards > 0 else 5
-    prompt_parts.append(f"8. QUANTIDADE: Gere EXATAMENTE {target_cards} cards. Nem mais, nem menos.")
+    prompt_parts.append(f"8. QUANTIDADE: Gere EXATAMENTE {target_cards} cards.")
     
     prompt_parts.extend([
         "",
-        "FORMATO JSON (responda APENAS com JSON válido):",
+        "Responda apenas com JSON válido:",
         '{"cards":[{"content":{"front":"...","back":"...","type":"text"}}],"detected_language":"pt"}',
         "",
         f"CONTEÚDO{'(truncado)' if was_truncated else ''}:",

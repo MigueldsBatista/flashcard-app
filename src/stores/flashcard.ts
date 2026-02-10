@@ -386,9 +386,12 @@ export const useFlashcardStore = defineStore('flashcard', () => {
         // Update current session
         if (currentSession.value) {
             const wasCorrect = difficulty !== 'forgot'
+            const isNewCard = card.status === 'new'
             currentSession.value = {
                 ...currentSession.value,
                 cardsStudied: currentSession.value.cardsStudied + 1,
+                newCards: currentSession.value.newCards + (isNewCard ? 1 : 0),
+                reviewCards: currentSession.value.reviewCards + (isNewCard ? 0 : 1),
                 accuracy: ((currentSession.value.accuracy * currentSession.value.cardsStudied) + (wasCorrect ? 1 : 0)) / (currentSession.value.cardsStudied + 1),
             }
         }
@@ -409,42 +412,57 @@ export const useFlashcardStore = defineStore('flashcard', () => {
     }
 
     async function endStudySession() {
-        if (currentSession.value) {
-            const authStore = useAuthStore()
-            const user = authStore.user
-            if (user) {
-                const sessionToSave = {
-                    user_id: user.id,
-                    deck_id: currentSession.value.deckId,
-                    start_time: currentSession.value.startTime,
-                    end_time: new Date(),
-                    cards_studied: currentSession.value.cardsStudied,
-                    new_cards: currentSession.value.newCards,
-                    review_cards: currentSession.value.reviewCards,
-                    accuracy: currentSession.value.accuracy
-                }
+        if (!currentSession.value) return
 
-                const { data, error } = await supabase
-                    .from('study_sessions')
-                    .insert(sessionToSave)
-                    .select()
-                    .single()
-
-                if (data && !error) {
-                    sessions.value.push({
-                        id: data.id,
-                        deckId: data.deck_id,
-                        startTime: new Date(data.start_time),
-                        endTime: data.end_time ? new Date(data.end_time) : undefined,
-                        cardsStudied: data.cards_studied,
-                        newCards: data.new_cards,
-                        reviewCards: data.review_cards,
-                        accuracy: data.accuracy
-                    })
-                }
-            }
+        // Don't save empty sessions (user backed out without studying)
+        if (currentSession.value.cardsStudied === 0) {
             currentSession.value = null
+            return
         }
+
+        const authStore = useAuthStore()
+        const user = authStore.user
+        if (!user) {
+            console.error('endStudySession: No user logged in')
+            currentSession.value = null
+            return
+        }
+
+        const sessionToSave = {
+            user_id: user.id,
+            deck_id: currentSession.value.deckId,
+            start_time: currentSession.value.startTime.toISOString(),
+            end_time: new Date().toISOString(),
+            cards_studied: currentSession.value.cardsStudied,
+            new_cards: currentSession.value.newCards,
+            review_cards: currentSession.value.reviewCards,
+            accuracy: currentSession.value.accuracy
+        }
+
+        const { data, error } = await supabase
+            .from('study_sessions')
+            .insert(sessionToSave)
+            .select()
+            .single()
+
+        if (error) {
+            console.error('endStudySession: Failed to save session:', error)
+        }
+
+        if (data && !error) {
+            sessions.value.push({
+                id: data.id,
+                deckId: data.deck_id,
+                startTime: new Date(data.start_time),
+                endTime: data.end_time ? new Date(data.end_time) : undefined,
+                cardsStudied: data.cards_studied,
+                newCards: data.new_cards,
+                reviewCards: data.review_cards,
+                accuracy: data.accuracy
+            })
+        }
+
+        currentSession.value = null
     }
 
     function updateSettings(newSettings: Partial<UserSettings>) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BarChart3, FolderOpen, Home, Sparkles } from 'lucide-vue-next';
+import { BarChart3, FolderOpen, Home, Settings, Sparkles } from 'lucide-vue-next';
 
 interface Props {
   currentView: string
@@ -16,13 +16,14 @@ const navItems = [
   { id: 'decks', icon: FolderOpen, label: 'Baralhos' },
   { id: 'ai-generate', icon: Sparkles, label: 'IA' },
   { id: 'stats', icon: BarChart3, label: 'Estatísticas' },
+  { id: 'settings', icon: Settings, label: 'Ajustes' },
 ]
 </script>
 
 <template>
   <div class="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-inset-bottom z-50 md:hidden">
     <div class="max-w-2xl mx-auto">
-      <div class="grid grid-cols-4 gap-1 p-2">
+      <div class="grid grid-cols-5 gap-1 p-2">
         <button
           v-for="item in navItems"
           :key="item.id"
