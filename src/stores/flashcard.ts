@@ -10,10 +10,20 @@ import type { Card, CardDifficulty, Deck, StudySession, StudyStats, UserSettings
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+const DARK_MODE_KEY = 'ultra_focus_dark_mode'
+
+function loadDarkModePreference(): boolean {
+    try {
+        const stored = localStorage.getItem(DARK_MODE_KEY)
+        if (stored !== null) return stored === 'true'
+    } catch { /* localStorage unavailable */ }
+    return false
+}
+
 const DEFAULT_SETTINGS: UserSettings = {
     dailyNewCardLimit: 20,
     dailyReviewLimit: 200,
-    darkMode: false,
+    darkMode: loadDarkModePreference(),
     hapticFeedback: true,
     autoPlayAudio: false,
 }
@@ -177,6 +187,7 @@ export const useFlashcardStore = defineStore('flashcard', () => {
                     ...updates,
                     id: currentDeck.id,
                     name: updates.name ?? currentDeck.name,
+                    icon: updates.icon !== undefined ? updates.icon : currentDeck.icon,
                     created: currentDeck.created,
                     updated: new Date(),
                 }
@@ -302,6 +313,11 @@ export const useFlashcardStore = defineStore('flashcard', () => {
 
     function updateSettings(newSettings: Partial<UserSettings>) {
         settings.value = { ...settings.value, ...newSettings }
+        if (newSettings.darkMode !== undefined) {
+            try {
+                localStorage.setItem(DARK_MODE_KEY, String(newSettings.darkMode))
+            } catch { /* localStorage unavailable */ }
+        }
     }
 
     return {

@@ -3,20 +3,24 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
+import { useDeckIcons } from '@/composables/useDeckIcons'
 import { useFlashcardStore } from '@/stores/flashcard'
 import type { Deck } from '@/types/flashcard'
-import { BookOpen, ChevronRight, Edit, FolderOpen, FolderPlus, Trash2 } from 'lucide-vue-next'
+import { ChevronDown, ChevronRight, Edit, FolderOpen, FolderPlus, Trash2 } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const store = useFlashcardStore()
+const { icons, getIconComponent } = useDeckIcons()
 
 const isCreating = ref(false)
 const editingDeck = ref<Deck | null>(null)
 const newDeckName = ref('')
 const newDeckDescription = ref('')
 const newDeckColor = ref('#3B82F6')
+const newDeckIcon = ref('BookOpen')
+const showIconPicker = ref(false)
 
 const colorOptions = [
   { name: 'Azul', value: '#3B82F6' },
@@ -34,6 +38,7 @@ function handleCreateDeck() {
     name: newDeckName.value,
     description: newDeckDescription.value,
     color: newDeckColor.value,
+    icon: newDeckIcon.value,
   })
 
   resetForm()
@@ -47,6 +52,7 @@ function handleUpdateDeck() {
     name: newDeckName.value,
     description: newDeckDescription.value,
     color: newDeckColor.value,
+    icon: newDeckIcon.value,
   })
 
   resetForm()
@@ -58,12 +64,15 @@ function handleEditDeck(deck: Deck) {
   newDeckName.value = deck.name
   newDeckDescription.value = deck.description || ''
   newDeckColor.value = deck.color || '#3B82F6'
+  newDeckIcon.value = deck.icon || 'BookOpen'
 }
 
 function resetForm() {
   newDeckName.value = ''
   newDeckDescription.value = ''
   newDeckColor.value = '#3B82F6'
+  newDeckIcon.value = 'BookOpen'
+  showIconPicker.value = false
 }
 
 function getCardCount(deckId: string): number {
@@ -82,6 +91,7 @@ function handleDeleteDeck(deck: Deck) {
     store.deleteDeck(deck.id)
   }
 }
+
 </script>
 
 <template>
@@ -163,6 +173,46 @@ function handleDeleteDeck(deck: Deck) {
               </div>
             </div>
 
+            <!-- Icon Picker (collapsed by default) -->
+            <div>
+              <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
+                Ícone
+              </label>
+              <!-- Collapsed: show selected icon + expand button -->
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-3 py-2 border border-border rounded-lg bg-muted/30 hover:bg-muted transition-colors"
+                  @click="showIconPicker = !showIconPicker"
+                >
+                  <component :is="getIconComponent(newDeckIcon)" class="w-5 h-5 text-foreground" />
+                  <span class="text-sm text-muted-foreground">{{ icons.find(i => i.name === newDeckIcon)?.label || 'Livro' }}</span>
+                  <ChevronDown class="w-4 h-4 text-muted-foreground transition-transform" :class="showIconPicker ? 'rotate-180' : ''" />
+                </button>
+              </div>
+              <!-- Expanded: icon grid -->
+              <div
+                v-if="showIconPicker"
+                class="mt-2 grid grid-cols-7 sm:grid-cols-9 gap-1.5 max-h-36 overflow-y-auto p-1 border border-border rounded-lg bg-muted/30"
+              >
+                <button
+                  v-for="icon in icons"
+                  :key="icon.name"
+                  type="button"
+                  class="w-9 h-9 flex items-center justify-center rounded-lg transition-all"
+                  :class="[
+                    newDeckIcon === icon.name
+                      ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30 scale-110'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-105',
+                  ]"
+                  :title="icon.label"
+                  @click="newDeckIcon = icon.name; showIconPicker = false"
+                >
+                  <component :is="icon.component" class="w-4.5 h-4.5" />
+                </button>
+              </div>
+            </div>
+
             <div class="flex flex-col-reverse sm:flex-row gap-2 pt-2">
               <Button variant="outline" class="sm:flex-none" @click="close(); resetForm()">
                 Cancelar
@@ -214,7 +264,7 @@ function handleDeleteDeck(deck: Deck) {
                   class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                   :style="{ backgroundColor: deck.color }"
                 >
-                  <BookOpen class="w-6 h-6 text-white" />
+                  <component :is="getIconComponent(deck.icon)" class="w-6 h-6 text-white" />
                 </div>
 
                 <div class="flex-1 min-w-0">

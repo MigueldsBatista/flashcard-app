@@ -25,6 +25,7 @@ export class SupabaseDeckService implements IDeckService {
             description: d.description,
             parentId: d.parent_id,
             color: d.color,
+            icon: d.icon,
             created: new Date(d.created_at),
             updated: new Date(d.updated_at),
         }))
@@ -41,6 +42,7 @@ export class SupabaseDeckService implements IDeckService {
                 description: input.description ?? null,
                 parent_id: input.parentId ?? null,
                 color: input.color ?? null,
+                icon: input.icon ?? null,
             })
             .select()
             .single()
@@ -54,6 +56,7 @@ export class SupabaseDeckService implements IDeckService {
             description: data.description || undefined,
             parentId: data.parent_id || undefined,
             color: data.color || undefined,
+            icon: data.icon || undefined,
             created: new Date(data.created_at),
             updated: new Date(data.updated_at),
         }
@@ -67,6 +70,7 @@ export class SupabaseDeckService implements IDeckService {
                 description: updates.description,
                 parent_id: updates.parentId,
                 color: updates.color,
+                icon: updates.icon,
                 updated_at: new Date(),
             })
             .eq('id', id)
