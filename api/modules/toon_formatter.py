@@ -71,7 +71,7 @@ def format_generation_prompt(
     Format the prompt for flashcard generation optimized for token efficiency.
     
     Args:
-        text: Source text content
+        text: Source text content or topic description
         context: Optional user context/instructions
         num_cards: Optional number of cards to generate
         
@@ -82,35 +82,57 @@ def format_generation_prompt(
     cleaned = clean_ocr_text(text)
     cleaned, was_truncated = truncate_if_needed(cleaned)
     
-    # Build prompt
-    prompt_parts = [
-        "TAREFA: Criar flashcards educacionais a partir do conteúdo.",
-        "",
-        "REGRAS:",
-        "1. Extraia APENAS informações explícitas do texto",
-        "2. NÃO invente dados - se não houver info suficiente, ignore",
-        "3. Pergunta clara e resposta curta (fácil de decorar)",
-        "4. Mantenha o idioma original do conteúdo",
-        "5. Use type='latex' para fórmulas matemáticas",
-        "6. Use apenas palavras, caso a extração tenha textos que não façam sentido, ignore e use oq conseguir entender do contexto",
-        "7. Se vc perceber que o conteúdo não é sobre estudo, retorne uma"
-    ]
-    
-    if context:
-        prompt_parts.append(f"7. Siga caso não contradiga as regras acima: {context}")
-    
     # Always include card limit - default to 5 if not specified
     target_cards = num_cards if num_cards and num_cards > 0 else 5
-    prompt_parts.append(f"8. QUANTIDADE: Gere EXATAMENTE {target_cards} cards.")
     
-    prompt_parts.extend([
+    # Detect if input is a short topic/description vs. actual content
+    is_topic_mode = len(cleaned.split()) < 30
+    
+    # Build system instructions (separate from user content)
+    rules = [
+        "TAREFA: Criar flashcards educacionais.",
         "",
-        "Responda apenas com JSON válido:",
+        "REGRAS:",
+        "1. Pergunta clara e resposta curta (fácil de decorar)",
+        "2. Mantenha o idioma original do conteúdo",
+        "3. Use type='latex' para fórmulas matemáticas",
+        f"4. QUANTIDADE: Gere EXATAMENTE {target_cards} cards",
+    ]
+    
+    if is_topic_mode:
+        # Topic mode: user gave a subject, AI should generate knowledge about it
+        rules.append("5. Gere flashcards com conhecimento real e preciso sobre o tema fornecido")
+        rules.append("6. NÃO use nenhuma informação destas instruções como conteúdo dos cards")
+    else:
+        # Content mode: user gave actual study material to extract from
+        rules.append("5. Extraia APENAS informações explícitas do texto fornecido abaixo")
+        rules.append("6. NÃO invente dados - se não houver info suficiente, gere menos cards")
+        rules.append("7. Use apenas palavras legíveis, ignore textos que não façam sentido")
+    
+    if context:
+        rules.append(f"{'7' if is_topic_mode else '8'}. Instrução adicional do usuário: {context}")
+    
+    rules.extend([
+        "",
+        "Responda SOMENTE com JSON válido neste formato:",
         '{"cards":[{"content":{"front":"...","back":"...","type":"text"}}],"detected_language":"pt"}',
-        "",
-        f"CONTEÚDO{'(truncado)' if was_truncated else ''}:",
-        cleaned
     ])
     
-    return '\n'.join(prompt_parts)
+    # Clearly delimit user content from instructions
+    if is_topic_mode:
+        rules.extend([
+            "",
+            "═══ TEMA DO USUÁRIO (Gere cards sobre este assunto) ═══",
+            cleaned,
+            "═══ FIM DO TEMA ═══"
+        ])
+    else:
+        rules.extend([
+            "",
+            f"═══ CONTEÚDO DO USUÁRIO{'(truncado)' if was_truncated else ''} (Extraia cards daqui) ═══",
+            cleaned,
+            "═══ FIM DO CONTEÚDO ═══"
+        ])
+    
+    return '\n'.join(rules)
 

@@ -76,12 +76,13 @@ function redrawCanvas() {
     const isRevealed = revealedIds.value.has(occ.id)
     
     if (!isRevealed) {
-      // Draw covered area
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'
+      // Draw covered area with individual occlusion color (fully opaque)
+      const color = occ.label || '#EF4444'
+      ctx.fillStyle = color
       ctx.fillRect(x, y, width, height)
       
       // Draw border
-      ctx.strokeStyle = 'rgba(239, 68, 68, 1)'
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'
       ctx.lineWidth = 2
       ctx.strokeRect(x, y, width, height)
       

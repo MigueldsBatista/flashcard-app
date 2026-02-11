@@ -44,6 +44,7 @@ export interface Deck {
     description?: string
     parentId?: string // For hierarchical decks
     color?: string
+    icon?: string // Lucide icon name
     created: Date
     updated: Date
 }

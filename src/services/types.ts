@@ -14,6 +14,7 @@ export interface DeckCreateInput {
     description?: string
     parentId?: string
     color?: string
+    icon?: string
 }
 
 export interface IDeckService {

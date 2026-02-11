@@ -183,7 +183,7 @@ function redrawCanvas() {
     const width = occ.width * internalScale
     const height = occ.height * internalScale
     const isSelected = selectedOcclusionId.value === occ.id
-    const color = occ.label || occlusionColor.value
+    const color = occ.label || '#EF4444'
 
     ctx.fillStyle = color
     ctx.fillRect(x, y, width, height)
