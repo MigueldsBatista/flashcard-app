@@ -90,7 +90,7 @@ export function calculateNextReview(
 
 export function getDueCards(cards: Card[]): Card[] {
     const now = new Date()
-    return cards.filter(card => new Date(card.nextReview) <= now)
+    return cards.filter(card => card.status !== 'new' && new Date(card.nextReview) <= now)
 }
 
 export function getNewCards(cards: Card[], limit: number): Card[] {
