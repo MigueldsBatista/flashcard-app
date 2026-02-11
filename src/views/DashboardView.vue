@@ -6,9 +6,10 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import Progress from '@/components/ui/Progress.vue'
 import Tabs from '@/components/ui/Tabs.vue'
 import { useNotifications } from '@/composables/useNotifications'
+import { getDueCards, getNewCards } from '@/services/spaced-repetition'
 import { useFlashcardStore } from '@/stores/flashcard'
 import { Brain, Calendar, Filter, Flame, Target, TrendingUp, Zap } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -23,7 +24,21 @@ const studyTabs = [
   { id: 'select', label: 'Selecionar Baralhos', icon: Filter },
 ]
 
+// Compute available cards (due + new) per deck
+const deckAvailableCards = computed(() => {
+  const result: Record<string, number> = {}
+  for (const deck of store.decks) {
+    const deckCards = store.cards.filter(c => c.deckId === deck.id)
+    const due = getDueCards(deckCards).length
+    const newCards = getNewCards(deckCards, store.settings.dailyNewCardLimit).length
+    result[deck.id] = due + newCards
+  }
+  return result
+})
+
 function toggleDeckSelection(deckId: string, isSelected: boolean) {
+  // Prevent selecting decks with no available cards
+  if (isSelected && (deckAvailableCards.value[deckId] ?? 0) === 0) return
   if (isSelected) {
     selectedDecks.value.push(deckId)
   } else {
@@ -284,16 +299,39 @@ function formatCooldown(date: Date | null): string {
                     Selecione os baralhos que deseja estudar nesta sessão.
                   </p>
                   
-                  <div class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
+                  <div class="space-y-1 max-h-60 overflow-y-auto border rounded-lg p-2">
                     <div v-if="store.decks.length === 0" class="text-center text-sm text-muted-foreground py-4">
                       Nenhum baralho encontrado.
                     </div>
-                    <div v-for="deck in store.decks" :key="deck.id" class="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md">
-                      <Checkbox 
+                    <div
+                      v-for="deck in store.decks"
+                      :key="deck.id"
+                      :class="[
+                        'flex items-center justify-between p-2 rounded-md transition-colors',
+                        (deckAvailableCards[deck.id] ?? 0) === 0
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'hover:bg-muted/50 cursor-pointer',
+                      ]"
+                    >
+                      <Checkbox
                         :model-value="selectedDecks.includes(deck.id)"
                         :label="deck.name"
+                        :disabled="(deckAvailableCards[deck.id] ?? 0) === 0"
                         @update:model-value="(val) => toggleDeckSelection(deck.id, val)"
                       />
+                      <span
+                        :class="[
+                          'text-xs font-medium shrink-0 ml-2 px-2 py-0.5 rounded-full',
+                          (deckAvailableCards[deck.id] ?? 0) > 0
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted text-muted-foreground',
+                        ]"
+                      >
+                        {{ (deckAvailableCards[deck.id] ?? 0) > 0
+                          ? `${deckAvailableCards[deck.id]} cartões`
+                          : 'Sem cartões'
+                        }}
+                      </span>
                     </div>
                   </div>
 
