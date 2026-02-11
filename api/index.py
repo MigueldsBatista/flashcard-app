@@ -17,12 +17,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from pydantic import ValidationError
 
-from modules.vision_engine import extract_text
-from modules.toon_formatter import (
+from api.modules.vision_engine import extract_text
+from api.modules.toon_formatter import (
     format_generation_prompt,
     truncate_if_needed
 )
-from modules.schema_parser import (
+from api.modules.schema_parser import (
     GenerationResponse,
     GenerationError,
     GeneratedCard,
