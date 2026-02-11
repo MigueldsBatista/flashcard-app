@@ -6,7 +6,7 @@ import Progress from '@/components/ui/Progress.vue'
 import { useNotifications } from '@/composables/useNotifications'
 import { getDueCards, getNewCards, prioritizeCards } from '@/services/spaced-repetition'
 import { useFlashcardStore } from '@/stores/flashcard'
-import type { CardDifficulty } from '@/types/flashcard'
+import type { CardDifficulty, Card as FlashCard } from '@/types/flashcard'
 import { ArrowLeft, Calendar, CheckCircle2, RotateCcw } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -25,23 +25,8 @@ const correctCount = ref(0)
 const isAnimating = ref(false)
 const animationClass = ref('')
 
-// Get cards for this session
-const studyCards = computed(() => {
-  let filteredCards = store.cards
-
-  if (deckId.value) {
-    filteredCards = store.cards.filter(card => card.deckId === deckId.value)
-  } else if (route.query.decks) {
-    const deckIds = (route.query.decks as string).split(',')
-    filteredCards = store.cards.filter(card => deckIds.includes(card.deckId))
-  }
-
-  const dueCards = getDueCards(filteredCards)
-  const newCards = getNewCards(filteredCards, store.settings.dailyNewCardLimit)
-  
-  const allStudyCards = [...dueCards, ...newCards]
-  return prioritizeCards(allStudyCards)
-})
+// Snapshot of cards for this session (frozen on mount so reviews don't shift the list)
+const studyCards = ref<FlashCard[]>([])
 
 const currentCard = computed(() => studyCards.value[currentCardIndex.value])
 const progress = computed(() => {
@@ -58,10 +43,23 @@ const difficultyButtons = [
 ]
 
 onMounted(() => {
+  // Snapshot the cards for this session so reviews don't shift the list
+  let filteredCards = store.cards
+
+  if (deckId.value) {
+    filteredCards = store.cards.filter(card => card.deckId === deckId.value)
+  } else if (route.query.decks) {
+    const deckIds = (route.query.decks as string).split(',')
+    filteredCards = store.cards.filter(card => deckIds.includes(card.deckId))
+  }
+
+  const dueCards = getDueCards(filteredCards)
+  const newCards = getNewCards(filteredCards, store.settings.dailyNewCardLimit)
+  studyCards.value = prioritizeCards([...dueCards, ...newCards])
+
   if (deckId.value) {
     store.startStudySession(deckId.value)
-  } else if (route.query.decks) {
-    // Multi-deck study: use the first deck as reference
+''  } else if (route.query.decks) {
     const deckIds = (route.query.decks as string).split(',')
     if (deckIds[0]) {
       store.startStudySession(deckIds[0])
