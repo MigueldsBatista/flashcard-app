@@ -17,17 +17,30 @@ from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from pydantic import ValidationError
 
-from api.modules.vision_engine import extract_text
-from api.modules.toon_formatter import (
-    format_generation_prompt,
-    truncate_if_needed
-)
-from api.modules.schema_parser import (
-    GenerationResponse,
-    GenerationError,
-    GeneratedCard,
-    CardContent
-)
+try:
+    from api.modules.vision_engine import extract_text
+    from api.modules.toon_formatter import (
+        format_generation_prompt,
+        truncate_if_needed
+    )
+    from api.modules.schema_parser import (
+        GenerationResponse,
+        GenerationError,
+        GeneratedCard,
+        CardContent
+    )
+except ImportError:
+    from modules.vision_engine import extract_text
+    from modules.toon_formatter import (
+        format_generation_prompt,
+        truncate_if_needed
+    )
+    from modules.schema_parser import (
+        GenerationResponse,
+        GenerationError,
+        GeneratedCard,
+        CardContent
+    )
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

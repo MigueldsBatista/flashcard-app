@@ -36,6 +36,11 @@ const deckAvailableCards = computed(() => {
   return result
 })
 
+// Total cards available for random study mode (due + new, excluding empty decks)
+const totalStudyableCards = computed(() => {
+  return Object.values(deckAvailableCards.value).reduce((sum, count) => sum + count, 0)
+})
+
 function toggleDeckSelection(deckId: string, isSelected: boolean) {
   // Prevent selecting decks with no available cards
   if (isSelected && (deckAvailableCards.value[deckId] ?? 0) === 0) return
@@ -55,7 +60,7 @@ function startStudy() {
     return
   }
 
-  if (store.stats.dueCards > 0) {
+  if (totalStudyableCards.value > 0) {
     success('Sessão de estudo iniciada!')
     router.push('/study')
   }
@@ -278,13 +283,13 @@ function formatCooldown(date: Date | null): string {
                     Estude cartões de todos os seus baralhos misturados. O algoritmo prioriza cartões vencidos.
                   </p>
                   <Button
-                    :disabled="store.stats.dueCards === 0"
+                    :disabled="totalStudyableCards === 0"
                     class="w-full h-14 text-lg font-semibold rounded-xl shadow-lg"
                     @click="startStudy"
                   >
-                    <template v-if="store.stats.dueCards > 0">
+                    <template v-if="totalStudyableCards > 0">
                       <Zap class="w-5 h-5 mr-2" />
-                      Estudar Agora ({{ store.stats.dueCards }} cartões)
+                      Estudar Agora ({{ totalStudyableCards }} cartões)
                     </template>
                     <template v-else>
                       <Calendar class="w-5 h-5 mr-2" />
