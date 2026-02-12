@@ -17,6 +17,7 @@ import {
     Tooltip,
 } from 'chart.js'
 import { BarChart3, Calendar, Clock, Flame, Target, TrendingUp } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
 
 ChartJS.register(
@@ -33,7 +34,7 @@ ChartJS.register(
 )
 
 const store = useFlashcardStore()
-const { loading } = store
+const { loading } = storeToRefs(store)
 const { 
   chartOptions, 
   doughnutOptions, 
