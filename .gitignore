@@ -38,3 +38,5 @@ __screenshots__/
 *.timestamp-*-*.mjs
 .vercel
 .env*.local
+firebase_service_account.json
+supabase/seed.sql

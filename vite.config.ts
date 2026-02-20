@@ -21,7 +21,54 @@ export default defineConfig({
     vue(),
     vueDevTools(),
     tailwindcss(),
-    VitePWA()
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'icons/*.png'],
+      manifest: {
+        name: "Ultra Focus",
+        short_name: "Ultra Focus",
+        description: "Estude smarter com flashcards e IA",
+        theme_color: "#3B82F6",
+        background_color: "#0F172A",
+        display: 'standalone',
+        orientation: 'portrait',
+        start_url: "/",
+        icons: [
+          {
+          src: "/icons/icon-192.png",
+            sizes: "192x192",
+            type: "image/png"
+          },
+          {
+            src: "/icons/icon-512.png",
+            sizes: "512x512",
+            type: "image/png"
+          },
+          {
+            src: "/icons/icon-maskable.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
+          }
+        ],
+        shortcuts: [
+          {
+            name: "Estudar agora",
+            short_name: "Estudar",
+            description: "Inicie uma sessão de estudo",
+            url: "/study",
+            icons: [{ src: "/icons/shortcut-study.png", sizes: "96x96" }]
+          },
+          {
+            name: "Meus Baralhos",
+            short_name: "Baralhos",
+            description: "Gerencie seus baralhos",
+            url: "/decks",
+            icons: [{ src: "/icons/shortcut-decks.png", sizes: "96x96" }]
+          }
+        ]
+      }
+    })
   ],
   resolve: {
     alias: {
@@ -29,7 +76,3 @@ export default defineConfig({
     },
   },
 })
-// Source - https://stackoverflow.com/a/63781351
-// Posted by Akbar Pulatov, modified by community. See post 'Timeline' for change history
-// Retrieved 2026-02-08, License - CC BY-SA 4.0
-// WSL port forwarding: netsh interface portproxy add v4tov4 listenport=5173 listenaddress=0.0.0.0 connectport=5173 connectaddress=172.28.196.34
