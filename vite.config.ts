@@ -30,7 +30,7 @@ export default defineConfig({
         description: "Estude smarter com flashcards e IA",
         theme_color: "#3B82F6",
         background_color: "#0F172A",
-        display: 'standalone',
+        display: 'fullscreen',
         orientation: 'portrait',
         start_url: "/",
         icons: [

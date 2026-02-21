@@ -1,0 +1,1 @@
+- follow dry principle, before implementing a method, class, type etc, verify it doesnt already exist
