@@ -1,0 +1,111 @@
+[
+    {
+        "id": "US-001",
+        "name": "Push Notifications de Cards Disponíveis",
+        "description": "Como usuário, quero receber uma notificação push quando um ou mais flashcards ficarem disponíveis para revisão, para que eu nunca perca o momento ideal de estudo sem precisar abrir o app.",
+        "acceptance_criteria": [
+            "Dado que o usuário deu permissão de notificação, quando um card entrar na janela de revisão (data_proxima_revisao <= now()), então o sistema envia uma notificação push em até 5 minutos",
+            "A notificação deve exibir o título 'Hora de revisar!' e o texto 'Você tem N card(s) prontos para revisão'",
+            "Ao tocar na notificação, o app abre diretamente na tela de estudo (/study)",
+            "Se o app estiver em foreground, a notificação NÃO é exibida (apenas o badge/contador atualiza)",
+            "O usuário pode desativar notificações nas configurações do app"
+        ],
+        "points": 8,
+        "priority": "high",
+        "passing": false
+    },
+    {
+        "id": "US-002",
+        "name": "Embaralhamento de Cards por Assunto",
+        "description": "Como usuário, quero que os flashcards sejam embaralhados durante a sessão de estudo de forma a evitar dois cards do mesmo baralho seguidos, para que meu cérebro não entre em modo de 'auto-piloto' e o aprendizado seja mais eficiente.",
+        "acceptance_criteria": [
+            "Dado uma sessão com cards de múltiplos baralhos, quando a sessão iniciar, então os cards são reordenados de modo que nenhum card de baralho X seja seguido por outro card do mesmo baralho X",
+            "Dado uma sessão com cards de um único baralho, então os cards são simplesmente embaralhados aleatoriamente",
+            "A ordem embaralhada é estável durante toda a sessão (não muda ao responder um card)",
+            "O embaralhamento deve ser executado em < 100ms para sessões de até 500 cards"
+        ],
+        "points": 3,
+        "priority": "medium",
+        "passing": false
+    },
+    {
+        "id": "US-003",
+        "name": "Instalação PWA com Ícones e Full Screen no Mobile",
+        "description": "Como usuário mobile, quero poder instalar o Ultra Focus na minha tela inicial e abrí-lo em tela cheia (sem barra do navegador), para que a experiência seja idêntica a um app nativo.",
+        "acceptance_criteria": [
+            "O web manifest contém display: 'fullscreen' ou 'standalone', background_color: '#0F172A' e theme_color: '#3B82F6'",
+            "O manifest expõe ícones PNG de 192x192 e 512x512, sendo ao menos um com purpose: 'maskable'",
+            "No Chrome/Edge Android, o botão 'Adicionar à tela inicial' aparece automaticamente após 2+ visitas",
+            "Após instalado, o app abre sem chrome do navegador (sem barra de URL)",
+            "O ícone na tela inicial exibe o logo correto, sem cortes, em dispositivos que usam máscara circular ou quadrada"
+        ],
+        "points": 2,
+        "priority": "high",
+        "passing": true
+    },
+    {
+        "id": "US-004",
+        "name": "Criação em Massa via Texto Estruturado (Bulk Create)",
+        "description": "Como usuário, quero criar múltiplos flashcards de uma só vez colando um texto no formato 'Frente: [pergunta] Verso: [resposta]', para que eu possa importar rapidamente conteúdo já organizado sem precisar criar card por card.",
+        "acceptance_criteria": [
+            "Dado um texto com N blocos no padrão 'Frente: <conteúdo>\\nVerso: <conteúdo>', quando o usuário clicar em 'Importar', então N cards são criados no baralho selecionado",
+            "O parser aceita variações de capitalização: 'frente:', 'FRENTE:', 'Frente:' e 'f:'",
+            "Blocos inválidos (sem Frente ou sem Verso) são ignorados e o sistema mostra quantos foram ignorados",
+            "O processo de criação em massa de até 50 cards completa em < 3 segundos",
+            "Uma prévia (preview) dos cards a serem criados é exibida antes da confirmação",
+            "Após a criação, o usuário é redirecionado para o baralho com os cards novos visíveis"
+        ],
+        "points": 5,
+        "priority": "high",
+        "passing": false
+    },
+    {
+        "id": "US-005",
+        "name": "Importação via Regex Frente/Verso",
+        "description": "Como usuário, quero que o sistema detecte e valide automaticamente o padrão 'Frente: X\\nVerso: Y' com regex, para que textos mal formatados sejam rejeitados com feedback claro antes de qualquer criação.",
+        "acceptance_criteria": [
+            "A regex valida que existe conteúdo não-vazio após 'Frente:' e após 'Verso:' (mínimo 1 caractere não-whitespace)",
+            "Texto que não bater com o padrão exibe a mensagem: 'Formato inválido. Use: Frente: [pergunta] \\nVerso: [resposta]'",
+            "A validação ocorre em tempo real (debounce de 300ms) enquanto o usuário digita na textarea",
+            "Linhas em branco entre blocos são aceitas e ignoradas",
+            "O sistema suporta múltiplos pares Frente/Verso em sequência no mesmo campo de texto"
+        ],
+        "points": 3,
+        "priority": "high",
+        "passing": false
+    },
+    {
+        "id": "US-006",
+        "name": "Abstração de LLM via LangChain",
+        "description": "Como desenvolvedor, quero que todas as chamadas a modelos de linguagem (Gemini, OpenAI, etc.) passem por uma camada de abstração LangChain, para que seja possível trocar o modelo utilizado apenas alterando uma variável de ambiente, sem modificar a lógica de geração de flashcards.",
+        "acceptance_criteria": [
+            "Dado que a variável de ambiente LLM_PROVIDER=gemini está definida, quando uma geração for solicitada, então o backend usa gemini-2.0-flash via langchain-google-genai",
+            "Dado que LLM_PROVIDER=openai está definida, quando uma geração for solicitada, então o backend usa o modelo definido em LLM_MODEL via langchain-openai, sem nenhuma mudança no código de geração",
+            "A função get_llm() em api/modules/ai.py retorna um objeto compatível com a interface BaseChatModel do LangChain",
+            "O módulo index.py não importa mais 'google.genai' diretamente; toda chamada ao LLM passa por get_llm()",
+            "Em ambiente de teste (LLM_PROVIDER=fake), a função retorna um FakeLLM que responde com JSON fixo válido, sem fazer chamadas externas",
+            "A troca de provider não altera o contrato de entrada/saída da rota POST /api/generate"
+        ],
+        "points": 5,
+        "priority": "medium",
+        "passing": false
+    },
+    {
+        "id": "US-007",
+        "name": "Tratamento de Erros Estruturado via Exceções Customizadas",
+        "description": "Como desenvolvedor, quero que o backend utilize uma hierarquia de exceções de domínio (ex: RateLimitException, ExtractionFailedException) registradas como exception handlers no FastAPI, para que as rotas em index.py não contenham try/catch e o contrato de erro HTTP seja definido inteiramente pelas próprias exceções.",
+        "acceptance_criteria": [
+            "Existe o módulo api/modules/exceptions.py com uma classe base AppException(HTTPException) e subclasses tipadas (ex: RateLimitException, ExtractionFailedException, NoContentException, AIParseException)",
+            "Cada subclasse define status_code, error_code e detail na própria classe; a mensagem é passada na instanciação (ex: raise RateLimitException('Tente novamente em 60s'))",
+            "Um exception handler global é registrado no app FastAPI via app.add_exception_handler(AppException, ...) no módulo exceptions.py ou em um módulo dedicado de setup",
+            "O módulo index.py não contém nenhum bloco try/except; apenas raise das exceções de domínio quando necessário",
+            "A resposta HTTP de erro mantém o formato JSON: {\"detail\": {\"error\": \"<mensagem>\", \"error_code\": \"<CODIGO>\", \"suggestion\": \"<dica opcional>\"}}",
+            "O handler loga automaticamente todas as exceções com nível WARNING (4xx) ou ERROR (5xx) sem que a rota precise fazer isso",
+            "Dado que uma rota lança RateLimitException, a resposta tem status 429 e error_code 'RATE_LIMITED'",
+            "Dado que uma rota lança ExtractionFailedException, a resposta tem status 400 e error_code 'EXTRACTION_FAILED'"
+        ],
+        "points": 3,
+        "priority": "medium",
+        "passing": false
+    }
+]

@@ -8,25 +8,25 @@ import os
 import base64
 from PIL import Image
 from google import genai
+from typing import TypedDict
 
-
-def get_gemini_client() -> genai.Client:
-    """Get Gemini client with API key from environment."""
+def _get_genai_client():
+    """Build a raw google.genai client for OCR. Uses GEMINI_API_KEY directly."""
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set")
+        raise ValueError("GEMINI_API_KEY não configurada")
     return genai.Client(api_key=api_key)
+
+class ImageInfoDict(TypedDict):
+    width: int
+    height: int
+    format: str
+    mode: str
 
 
 def extract_text(image_bytes: bytes) -> str:
     """
     Extract text from image using Gemini Vision API.
-    
-    Args:
-        image_bytes: Raw image bytes
-        
-    Returns:
-        Extracted text from the image
     """
     try:
         # Convert image to base64
@@ -56,7 +56,7 @@ def extract_text(image_bytes: bytes) -> str:
         base64_image = base64.b64encode(buffer.read()).decode('utf-8')
         
         # Use Gemini Vision to extract text
-        client = get_gemini_client()
+        client = _get_genai_client()
         response = client.models.generate_content(
             model='gemini-2.0-flash',
             contents=[
@@ -92,14 +92,6 @@ def extract_text(image_bytes: bytes) -> str:
 def compress_image(image_bytes: bytes, max_size: int = 1024, quality: int = 85) -> bytes:
     """
     Compress image for efficient processing.
-    
-    Args:
-        image_bytes: Raw image bytes
-        max_size: Maximum dimension (width or height) in pixels
-        quality: JPEG quality (1-100)
-        
-    Returns:
-        Compressed image bytes
     """
     try:
         image = Image.open(io.BytesIO(image_bytes))
@@ -130,15 +122,9 @@ def compress_image(image_bytes: bytes, max_size: int = 1024, quality: int = 85) 
         raise ValueError(f"Failed to compress image: {str(e)}")
 
 
-def get_image_info(image_bytes: bytes) -> dict:
+def get_image_info(image_bytes: bytes) -> ImageInfoDict:
     """
     Get basic information about an image.
-    
-    Args:
-        image_bytes: Raw image bytes
-        
-    Returns:
-        Dictionary with image info (width, height, format)
     """
     try:
         image = Image.open(io.BytesIO(image_bytes))
@@ -150,3 +136,4 @@ def get_image_info(image_bytes: bytes) -> dict:
         }
     except Exception as e:
         raise ValueError(f"Failed to get image info: {str(e)}")
+
