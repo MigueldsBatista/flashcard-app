@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useEventListener } from '@vueuse/core';
 import { ChevronDown } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 
@@ -36,7 +37,7 @@ function toggle() {
   isOpen.value = !isOpen.value;
 }
 
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed } from 'vue';
 
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as HTMLElement;
@@ -45,13 +46,7 @@ function handleClickOutside(e: MouseEvent) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
+useEventListener('click', handleClickOutside);
 </script>
 
 <template>

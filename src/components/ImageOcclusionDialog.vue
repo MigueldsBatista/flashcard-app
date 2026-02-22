@@ -5,7 +5,7 @@ import UndoRedoControls from '@/components/UndoRedoControls.vue';
 import type { ImageOcclusion } from '@/types/flashcard';
 import { useManualRefHistory } from '@vueuse/core';
 import { Check, Minus, Plus, RotateCcw, Trash2, X, ZoomIn } from 'lucide-vue-next';
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 interface Props {
   open: boolean;
@@ -57,7 +57,7 @@ const resizeStartRect = ref<ImageOcclusion | null>(null);
 const moveStartOcclusion = ref<ImageOcclusion | null>(null);
 
 // History with manual commits
-const { history, commit, undo, redo, canUndo, canRedo, clear: clearHistory } = useManualRefHistory(
+const { commit, undo, redo, canUndo, canRedo, clear: clearHistory } = useManualRefHistory(
   localOcclusions,
   {
     capacity: 50,
@@ -100,10 +100,10 @@ function handleKeyDown(event: KeyboardEvent) {
   }
 }
 
-// Computed
-const selectedOcclusion = computed(() =>
-  localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
-);
+// // Computed
+// const selectedOcclusion = computed(() =>
+//   localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
+// );
 
 // Initialize
 watch(() => props.open, (isOpen) => {
@@ -694,39 +694,43 @@ onUnmounted(() => {
 
             <!-- Zoom controls -->
             <div class="flex items-center gap-1">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 :disabled="zoom <= MIN_ZOOM"
-                class="p-1.5 rounded-lg transition-colors disabled:opacity-40 hover:bg-muted"
+                class="p-1.5"
                 @click="zoomOut"
               >
                 <Minus class="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button
-                type="button"
-                class="px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted rounded min-w-12 text-center"
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="px-2 py-1 text-xs font-medium text-muted-foreground min-w-12 text-center"
                 @click="resetZoom"
               >
                 {{ Math.round(zoom * 100) }}%
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 :disabled="zoom >= MAX_ZOOM"
-                class="p-1.5 rounded-lg transition-colors disabled:opacity-40 hover:bg-muted"
+                class="p-1.5"
                 @click="zoomIn"
               >
                 <Plus class="w-4 h-4 text-muted-foreground" />
-              </button>
+              </Button>
             </div>
 
             <!-- Close -->
-            <button
-              type="button"
-              class="p-2 rounded-lg hover:bg-muted transition-colors"
+            <Button
+              variant="ghost"
+              size="sm"
+              class="p-2"
               @click="handleCancel"
             >
               <X class="w-5 h-5 text-muted-foreground" />
-            </button>
+            </Button>
           </div>
         </div>
 

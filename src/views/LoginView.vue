@@ -2,6 +2,7 @@
 import GoogleLogo from '@/components/icons/GoogleLogo.vue';
 import UltraFocusLogo from '@/components/icons/UltraFocusLogo.vue';
 import Button from '@/components/ui/Button.vue';
+import Input from '@/components/ui/Input.vue';
 import { supabase } from '@/lib/supabase';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -83,15 +84,14 @@ async function handleGoogleLogin() {
               Email address
             </label>
             <div class="mt-1">
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
                 autocomplete="email"
                 required
                 v-model="email"
-                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400"
-              >
+              />
             </div>
           </div>
 
@@ -103,15 +103,14 @@ async function handleGoogleLogin() {
               Password
             </label>
             <div class="mt-1">
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
                 autocomplete="current-password"
                 required
                 v-model="password"
-                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400"
-              >
+              />
             </div>
           </div>
 
@@ -132,8 +131,7 @@ async function handleGoogleLogin() {
             <Button
               type="submit"
               :disabled="loading"
-              size="md"
-              class="w-full flex border border-transparent rounded-md shadow-sm text-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-blue-500 duration-200"
+              class="w-full"
             >
               <span v-if="loading">Signing in...</span>
               <span v-else>Sign in</span>
@@ -160,7 +158,7 @@ async function handleGoogleLogin() {
               :disabled="loading"
               variant="outline"
               size="md"
-              class="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:border-slate-600 dark:text-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:focus:ring-offset-slate-800 disabled:opacity-50 transition-colors duration-200"
+              class="w-full gap-3 text-gray-700 bg-white hover:bg-gray-50 dark:border-slate-600 dark:text-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:focus:ring-offset-slate-800"
             >
               <google-logo />
               Sign in with Google
