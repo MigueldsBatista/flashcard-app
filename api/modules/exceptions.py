@@ -69,6 +69,12 @@ class NoContentException(AppException):
     error_code = "NO_CONTENT"
 
 
+class UnauthorizedException(AppException):
+    """401 — authentication is required or token is invalid."""
+    status_code = 401
+    error_code = "AUTH_REQUIRED"
+
+
 # ---------------------------------------------------------------------------
 # 5xx — server / integration errors
 # ---------------------------------------------------------------------------

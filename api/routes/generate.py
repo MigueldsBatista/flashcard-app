@@ -7,10 +7,11 @@ prompt formatting, LLM invocation, and response validation.
 
 import logging
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 try:
     from api.modules.ai import get_llm
+    from api.modules.auth import require_authenticated_user
     from api.modules.exceptions import (
         ExtractionFailedException,
         NoContentException,
@@ -21,6 +22,7 @@ try:
     from api.services.generation import call_llm_with_retry, parse_ai_response
 except ImportError:
     from modules.ai import get_llm
+    from modules.auth import require_authenticated_user
     from modules.exceptions import (
         ExtractionFailedException,
         NoContentException,
@@ -32,10 +34,14 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+    
+router = APIRouter(dependencies=[Depends(require_authenticated_user)])
 
 
-@router.post("/api/generate", response_model=GenerationResponse)
+@router.post(
+    "/api/generate",
+    response_model=GenerationResponse,
+)
 async def generate_flashcards(
     image: UploadFile | None = File(default=None),
     text: str | None = Form(default=None),
