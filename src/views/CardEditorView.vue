@@ -9,7 +9,7 @@ import Tabs from '@/components/ui/Tabs.vue';
 import Textarea from '@/components/ui/Textarea.vue';
 import { useFlashcardStore } from '@/stores/flashcard';
 import type { CardContent, Card as FlashCard, ImageOcclusion } from '@/types/flashcard';
-import { ArrowLeft, Calculator, Edit, Eye, FilePlus, FileText, Grid3X3, Trash2 } from 'lucide-vue-next';
+import { ArrowLeft, Edit, Eye, FilePlus, FileText, Grid3X3, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -34,10 +34,9 @@ const occlusionAreas = ref<ImageOcclusion[]>([]);
 const deck = computed(() => store.decks.find(d => d.id === deckId.value));
 const deckCards = computed(() => store.cards.filter(card => card.deckId === deckId.value));
 
-// Removed 'code' type - only text, latex, and occlusion
+// Only text and occlusion are editable
 const cardTypeTabs = [
   { id: 'text', label: 'Texto', icon: FileText },
-  { id: 'latex', label: 'Fórmulas', icon: Calculator },
   { id: 'occlusion', label: 'Oclusão', icon: Grid3X3 }
 ];
 
@@ -143,9 +142,9 @@ function handleEditCard(card: FlashCard) {
   editingCard.value = card;
   frontContent.value = card.content.front;
   backContent.value = card.content.back;
-  // Map old 'code' type to 'text' for backwards compatibility
-  const type = card.content.type === 'code' ? 'text' : card.content.type;
-  cardType.value = type as 'text' | 'occlusion';
+  // Map unsupported legacy types to text for backwards compatibility
+  const isSupportedEditorType = card.content.type === 'text' || card.content.type === 'occlusion';
+  cardType.value = (isSupportedEditorType ? card.content.type : 'text') as 'text' | 'occlusion';
   occlusionImageData.value = card.content.imageData || '';
   occlusionAreas.value = card.content.imageOcclusions ? [...card.content.imageOcclusions] : [];
 }
@@ -166,8 +165,7 @@ function handleOpenCreate() {
 function getCardTypeIcon(type: string) {
   switch (type) {
     case 'text': return FileText;
-    case 'code': return FileText; // Map code to text icon
-    case 'latex': return Calculator;
+    case 'code': return FileText;
     case 'occlusion': return Grid3X3;
     default: return FileText;
   }
@@ -176,8 +174,7 @@ function getCardTypeIcon(type: string) {
 function getCardTypeLabel(type: string) {
   switch (type) {
     case 'text': return 'Texto';
-    case 'code': return 'Texto';
-    case 'latex': return 'Fórmula';
+    case 'code': return 'Código';
     case 'occlusion': return 'Oclusão';
     default: return 'Texto';
   }
@@ -276,37 +273,6 @@ function handleCancelOcclusion() {
                   </div>
                 </div>
 
-                <!-- LaTeX Type -->
-                <div
-                  v-if="activeTab === 'latex'"
-                  class="space-y-3"
-                >
-                  <div>
-                    <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
-                      Pergunta
-                    </label>
-                    <Textarea
-                      v-model="frontContent"
-                      placeholder="Ex: Qual é a fórmula de Bhaskara?"
-                      :rows="2"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
-                      Fórmula (LaTeX)
-                    </label>
-                    <Textarea
-                      v-model="backContent"
-                      placeholder="Ex: x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}"
-                      :rows="3"
-                      class="font-mono text-sm"
-                    />
-                    <p class="text-xs text-muted-foreground mt-1">
-                      Use sintaxe LaTeX
-                    </p>
-                  </div>
-                </div>
-
                 <!-- Occlusion Type -->
                 <div v-if="activeTab === 'occlusion'">
                   <ImageOcclusionEditor
@@ -387,7 +353,7 @@ function handleCancelOcclusion() {
             class="p-3 hover:shadow-lg transition-shadow"
           >
             <div class="flex items-start gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+              <div class="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
                 <component
                   :is="getCardTypeIcon(card.content.type)"
                   class="w-3.5 h-3.5"
@@ -409,7 +375,7 @@ function handleCancelOcclusion() {
                 </div>
               </div>
 
-              <div class="flex items-center gap-1 flex-shrink-0">
+              <div class="flex items-center gap-1 shrink-0">
                 <Button
                   variant="ghost"
                   size="sm"

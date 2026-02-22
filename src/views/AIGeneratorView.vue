@@ -527,7 +527,7 @@ function closePreview() {
                       {{ card.content.back }}
                     </p>
                     <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground">
-                      {{ card.content.type === 'latex' ? 'Fórmula' : 'Texto' }}
+                      {{ card.content.type === 'code' ? 'Código' : 'Texto' }}
                     </span>
                   </div>
                 </div>
