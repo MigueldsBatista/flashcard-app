@@ -2,22 +2,22 @@
 import { BarChart3, FolderOpen, Home, Settings, Sparkles } from 'lucide-vue-next';
 
 interface Props {
-  currentView: string
+  currentView: string;
 }
 
-defineProps<Props>()
+defineProps<Props>();
 
 const emit = defineEmits<{
-  navigate: [view: string]
-}>()
+  navigate: [view: string];
+}>();
 
 const navItems = [
   { id: 'home', icon: Home, label: 'Início' },
   { id: 'decks', icon: FolderOpen, label: 'Baralhos' },
   { id: 'ai-generate', icon: Sparkles, label: 'IA' },
   { id: 'stats', icon: BarChart3, label: 'Estatísticas' },
-  { id: 'settings', icon: Settings, label: 'Ajustes' },
-]
+  { id: 'settings', icon: Settings, label: 'Ajustes' }
+];
 </script>
 
 <template>
@@ -35,7 +35,10 @@ const navItems = [
           ]"
           @click="emit('navigate', item.id)"
         >
-          <component :is="item.icon" class="w-5 h-5 mb-1" />
+          <component
+            :is="item.icon"
+            class="w-5 h-5 mb-1"
+          />
           <span class="text-xs font-medium">{{ item.label }}</span>
         </button>
       </div>

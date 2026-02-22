@@ -10,6 +10,7 @@ Verifies that:
 import os
 import unittest
 from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 try:
@@ -143,7 +144,7 @@ class TestFakeProvider(BaseAPITest):
             fake_resp = self.client.post("/api/generate", data={"text": "word " * 20})
 
         # mocked real provider
-        with patch("index.get_llm", return_value=mock_llm):
+        with patch("routes.generate.get_llm", return_value=mock_llm):
             real_resp = self.client.post("/api/generate", data={"text": "word " * 20})
 
         self.assertEqual(fake_resp.status_code, real_resp.status_code)

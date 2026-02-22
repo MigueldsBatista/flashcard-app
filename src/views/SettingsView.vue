@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
-import Input from '@/components/ui/Input.vue'
-import Separator from '@/components/ui/Separator.vue'
-import Switch from '@/components/ui/Switch.vue'
-import { useAuthStore } from '@/stores/auth'
-import { useFlashcardStore } from '@/stores/flashcard'
-import { Database, LogOut, Settings as SettingsIcon, Smartphone, User, Volume2, Zap } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
+import Button from '@/components/ui/Button.vue';
+import Card from '@/components/ui/Card.vue';
+import Input from '@/components/ui/Input.vue';
+import Separator from '@/components/ui/Separator.vue';
+import Switch from '@/components/ui/Switch.vue';
+import { useAuthStore } from '@/stores/auth';
+import { useFlashcardStore } from '@/stores/flashcard';
+import { Database, LogOut, Settings as SettingsIcon, Smartphone, User, Volume2, Zap } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
 
-const store = useFlashcardStore()
-const authStore = useAuthStore()
-const router = useRouter()
+const store = useFlashcardStore();
+const authStore = useAuthStore();
+const router = useRouter();
 
 async function handleLogout() {
-  await authStore.signOut()
-  router.push('/login')
+  await authStore.signOut();
+  router.push('/login');
 }
 
 function handleExportData() {
@@ -23,58 +23,58 @@ function handleExportData() {
     cards: store.cards,
     decks: store.decks,
     settings: store.settings,
-    exportedAt: new Date().toISOString(),
-  }
+    exportedAt: new Date().toISOString()
+  };
 
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `ultra-focus-backup-${new Date().toISOString().split('T')[0]}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ultra-focus-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function handleImportData() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
   input.onchange = (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (!file) return
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const data = JSON.parse(event.target?.result as string)
-        
+        const data = JSON.parse(event.target?.result as string);
+
         if (confirm('Isso irá substituir todos os seus dados atuais. Continuar?')) {
-          localStorage.setItem('flashcards_cards', JSON.stringify(data.cards || []))
-          localStorage.setItem('flashcards_decks', JSON.stringify(data.decks || []))
-          localStorage.setItem('flashcards_settings', JSON.stringify(data.settings || store.settings))
-          window.location.reload()
+          localStorage.setItem('flashcards_cards', JSON.stringify(data.cards || []));
+          localStorage.setItem('flashcards_decks', JSON.stringify(data.decks || []));
+          localStorage.setItem('flashcards_settings', JSON.stringify(data.settings || store.settings));
+          window.location.reload();
         }
-      } catch  {
-        alert('Erro ao importar dados. Verifique se o arquivo está correto.')
+      } catch {
+        alert('Erro ao importar dados. Verifique se o arquivo está correto.');
       }
-    }
-    reader.readAsText(file)
-  }
-  input.click()
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 function clearAllData() {
   if (confirm('ATENÇÃO: Isso irá apagar todos os seus baralhos, cartões e progresso. Esta ação não pode ser desfeita!')) {
     if (confirm('Tem certeza absoluta? Todos os dados serão perdidos permanentemente.')) {
-      localStorage.clear()
-      window.location.reload()
+      localStorage.clear();
+      window.location.reload();
     }
   }
 }
 
 function toggleDarkMode(value: boolean) {
-  store.updateSettings({ darkMode: value })
-  document.documentElement.classList.toggle('dark', value)
+  store.updateSettings({ darkMode: value });
+  document.documentElement.classList.toggle('dark', value);
 }
 </script>
 
@@ -163,7 +163,10 @@ function toggleDarkMode(value: boolean) {
 
               <Separator />
 
-              <div class="flex items-center justify-between" v-if="false">
+              <div
+                class="flex items-center justify-between"
+                v-if="false"
+              >
                 <div>
                   <label class="text-sm font-medium text-foreground flex items-center gap-2">
                     <Zap class="w-4 h-4" />
@@ -181,7 +184,10 @@ function toggleDarkMode(value: boolean) {
 
               <Separator v-if="false" />
 
-              <div class="flex items-center justify-between" v-if="false">
+              <div
+                class="flex items-center justify-between"
+                v-if="false"
+              >
                 <div>
                   <label class="text-sm font-medium text-foreground flex items-center gap-2">
                     <Volume2 class="w-4 h-4" />
@@ -224,8 +230,8 @@ function toggleDarkMode(value: boolean) {
                 </div>
               </div>
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 class="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10 border-red-200 dark:border-red-900/30 shadow-sm"
                 @click="handleLogout"
               >
@@ -245,18 +251,26 @@ function toggleDarkMode(value: boolean) {
             </div>
 
             <div class="space-y-3">
-              <Button variant="outline" class="w-full justify-start shadow-sm" @click="handleExportData">
+              <Button
+                variant="outline"
+                class="w-full justify-start shadow-sm"
+                @click="handleExportData"
+              >
                 Exportar Todos os Dados
               </Button>
 
-              <Button variant="outline" class="w-full justify-start shadow-sm" @click="handleImportData">
+              <Button
+                variant="outline"
+                class="w-full justify-start shadow-sm"
+                @click="handleImportData"
+              >
                 Importar Dados
               </Button>
 
               <Separator />
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 class="w-full justify-start text-destructive hover:bg-destructive/10 shadow-sm"
                 @click="clearAllData"
               >

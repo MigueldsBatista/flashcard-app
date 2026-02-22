@@ -3,55 +3,55 @@ import { ChevronDown } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 
 interface Props {
-  modelValue?: string
-  options: Array<{ value: string; label: string }>
-  placeholder?: string
+  modelValue?: string;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  'update:modelValue': [value: string];
+}>();
 
-const isOpen = ref(false)
-const selected = ref(props.modelValue || '')
+const isOpen = ref(false);
+const selected = ref(props.modelValue || '');
 
 watch(() => props.modelValue, (newVal) => {
-  if (newVal !== undefined) selected.value = newVal
-})
+  if (newVal !== undefined) selected.value = newVal;
+});
 
 const selectedLabel = computed(() => {
-  const option = props.options.find(o => o.value === selected.value)
-  return option?.label || props.placeholder || 'Selecione...'
-})
+  const option = props.options.find(o => o.value === selected.value);
+  return option?.label || props.placeholder || 'Selecione...';
+});
 
 function selectOption(value: string) {
-  selected.value = value
-  emit('update:modelValue', value)
-  isOpen.value = false
+  selected.value = value;
+  emit('update:modelValue', value);
+  isOpen.value = false;
 }
 
 function toggle() {
-  isOpen.value = !isOpen.value
+  isOpen.value = !isOpen.value;
 }
 
 import { computed, onMounted, onUnmounted } from 'vue';
 
 function handleClickOutside(e: MouseEvent) {
-  const target = e.target as HTMLElement
+  const target = e.target as HTMLElement;
   if (!target.closest('.select-container')) {
-    isOpen.value = false
+    isOpen.value = false;
   }
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
+  document.addEventListener('click', handleClickOutside);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>

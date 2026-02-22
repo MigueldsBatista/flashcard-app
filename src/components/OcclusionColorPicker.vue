@@ -2,14 +2,14 @@
 import { computed, ref } from 'vue';
 
 interface Props {
-  modelValue: string
+  modelValue: string;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  'update:modelValue': [value: string];
+}>();
 
 const colors = [
   { name: 'Vermelho', value: '#EF4444' },
@@ -19,23 +19,23 @@ const colors = [
   { name: 'Roxo', value: '#A855F7' },
   { name: 'Amarelo', value: '#EAB308' },
   { name: 'Rosa', value: '#EC4899' },
-  { name: 'Ciano', value: '#06B6D4' },
-]
+  { name: 'Ciano', value: '#06B6D4' }
+];
 
-const isOpen = ref(false)
-const buttonRef = ref<HTMLButtonElement | null>(null)
+const isOpen = ref(false);
+const buttonRef = ref<HTMLButtonElement | null>(null);
 
 const selectedColor = computed(() => {
-  return colors.find(c => c.value === props.modelValue) || colors[0]
-})
+  return colors.find(c => c.value === props.modelValue) || colors[0];
+});
 
 function selectColor(color: string) {
-  emit('update:modelValue', color)
-  isOpen.value = false
+  emit('update:modelValue', color);
+  isOpen.value = false;
 }
 
 function toggleDropdown() {
-  isOpen.value = !isOpen.value
+  isOpen.value = !isOpen.value;
 }
 </script>
 
@@ -72,8 +72,8 @@ function toggleDropdown() {
               type="button"
               class="w-10 h-10 rounded-lg transition-transform hover:scale-105 active:scale-95 border-2"
               :class="[
-                modelValue === color.value 
-                  ? 'border-white ring-2 ring-primary' 
+                modelValue === color.value
+                  ? 'border-white ring-2 ring-primary'
                   : 'border-white/30'
               ]"
               :style="{ backgroundColor: color.value }"

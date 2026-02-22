@@ -10,6 +10,7 @@ Covers every domain exception and verifies:
 import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
+
 from fastapi.testclient import TestClient
 
 try:
@@ -82,7 +83,7 @@ class TestNoContent(BaseAPITest):
 class TestExtractionFailed(BaseAPITest):
     def test_extract_text_raises_value_error(self):
         """When extract_text raises ValueError, returns 400 EXTRACTION_FAILED."""
-        with patch("index.extract_text", side_effect=ValueError("imagem inválida")):
+        with patch("routes.generate.extract_text", side_effect=ValueError("imagem inválida")):
             response = self.client.post(
                 "/api/generate",
                 files={"image": ("test.png", b"not-an-image", "image/png")},
@@ -91,7 +92,7 @@ class TestExtractionFailed(BaseAPITest):
 
     def test_ocr_text_too_short(self):
         """When OCR returns < 10 chars, returns 400 EXTRACTION_FAILED."""
-        with patch("index.extract_text", return_value="ab"):
+        with patch("routes.generate.extract_text", return_value="ab"):
             response = self.client.post(
                 "/api/generate",
                 files={"image": ("test.png", b"\x89PNG\r\n\x1a\n", "image/png")},
@@ -111,8 +112,8 @@ class TestRateLimit(BaseAPITest):
         )
 
         with (
-            patch("index.get_llm", return_value=mock_llm),
-            patch("index.asyncio.sleep", new_callable=AsyncMock),
+            patch("routes.generate.get_llm", return_value=mock_llm),
+            patch("services.generation.asyncio.sleep", new_callable=AsyncMock),
         ):
             response = self.client.post("/api/generate", data={"text": "word " * 20})
 
@@ -128,7 +129,7 @@ class TestAIParseFailed(BaseAPITest):
         """When the LLM returns malformed JSON, route returns 500 AI_PARSE_FAILED."""
         mock_llm = self._make_llm_mock(response_text="this is not json at all {{{")
 
-        with patch("index.get_llm", return_value=mock_llm):
+        with patch("routes.generate.get_llm", return_value=mock_llm):
             response = self.client.post("/api/generate", data={"text": "word " * 20})
 
         self.assertErrorCode(response, 500, "AI_PARSE_FAILED")

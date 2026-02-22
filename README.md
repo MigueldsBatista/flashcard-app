@@ -5,7 +5,7 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
 ## 🚀 Features
 
 -   **Spaced Repetition System (SRS):** Uses a modified SM-2 algorithm to schedule reviews at optimal intervals.
--   **Rich Content Support:** Create cards with Markdown text, Code blocks, and LaTeX mathematical formulas.
+-   **Rich Content Support:** Create cards with Markdown text and Code blocks.
 -   **Image Occlusion:** Enhanced learning for anatomy, diagrams, and maps by hiding parts of an image.
 -   **Dashboard & Statistics:** Detailed metrics on readiness, streaks, accuracy, and review activity.
 -   **Deck Management:** Organize cards into decks with custom colors and descriptions.

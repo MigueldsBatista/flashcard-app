@@ -2,38 +2,38 @@
 import { ref, watch } from 'vue';
 
 interface Props {
-  open?: boolean
+  open?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  open: false,
-})
+  open: false
+});
 
 const emit = defineEmits<{
-  'update:open': [value: boolean]
-}>()
+  'update:open': [value: boolean];
+}>();
 
-const isOpen = ref(props.open)
+const isOpen = ref(props.open);
 
 watch(() => props.open, (newVal) => {
-  isOpen.value = newVal
-})
+  isOpen.value = newVal;
+});
 
 function close() {
-  isOpen.value = false
-  emit('update:open', false)
+  isOpen.value = false;
+  emit('update:open', false);
 }
 
 function handleBackdropClick(e: MouseEvent) {
   if (e.target === e.currentTarget) {
-    close()
+    close();
   }
 }
 
 // Close on escape
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
-    close()
+    close();
   }
 }
 </script>

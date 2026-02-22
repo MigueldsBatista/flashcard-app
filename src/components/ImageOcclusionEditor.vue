@@ -1,227 +1,227 @@
 <script setup lang="ts">
-import ImageOcclusionDialog from '@/components/ImageOcclusionDialog.vue'
-import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
-import type { ImageOcclusion } from '@/types/flashcard'
-import { Check, Edit2, Upload } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import ImageOcclusionDialog from '@/components/ImageOcclusionDialog.vue';
+import Button from '@/components/ui/Button.vue';
+import Card from '@/components/ui/Card.vue';
+import type { ImageOcclusion } from '@/types/flashcard';
+import { Check, Edit2, Upload } from 'lucide-vue-next';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 interface Props {
-  imageData?: string
-  occlusions?: ImageOcclusion[]
+  imageData?: string;
+  occlusions?: ImageOcclusion[];
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:imageData': [value: string]
-  'update:occlusions': [value: ImageOcclusion[]]
-  save: [data: { imageData: string; occlusions: ImageOcclusion[] }]
-  cancel: []
-}>()
+  'update:imageData': [value: string];
+  'update:occlusions': [value: ImageOcclusion[]];
+  save: [data: { imageData: string; occlusions: ImageOcclusion[] }];
+  cancel: [];
+}>();
 
 // Refs
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const containerRef = ref<HTMLDivElement | null>(null)
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const imageElement = ref<HTMLImageElement | null>(null)
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+const containerRef = ref<HTMLDivElement | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const imageElement = ref<HTMLImageElement | null>(null);
 
 // State
-const imageData = ref(props.imageData || '')
-const occlusions = ref<ImageOcclusion[]>(props.occlusions || [])
-const imageLoaded = ref(false)
-const canvasScale = ref(1)
-const dialogOpen = ref(false)
+const imageData = ref(props.imageData || '');
+const occlusions = ref<ImageOcclusion[]>(props.occlusions || []);
+const imageLoaded = ref(false);
+const canvasScale = ref(1);
+const dialogOpen = ref(false);
 
 // Computed
-const hasImage = computed(() => !!imageData.value)
-const canSave = computed(() => hasImage.value && occlusions.value.length > 0)
+const hasImage = computed(() => !!imageData.value);
+const canSave = computed(() => hasImage.value && occlusions.value.length > 0);
 
 function clearImage() {
-  imageData.value = ''
-  occlusions.value = []
-  imageElement.value = null
-  imageLoaded.value = false
-  emit('update:imageData', '')
-  emit('update:occlusions', [])
+  imageData.value = '';
+  occlusions.value = [];
+  imageElement.value = null;
+  imageLoaded.value = false;
+  emit('update:imageData', '');
+  emit('update:occlusions', []);
   if (fileInputRef.value) {
-    fileInputRef.value.value = ''
+    fileInputRef.value.value = '';
   }
 }
 
 function handleFileSelect(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
 
-  imageLoaded.value = false
-  
-  const reader = new FileReader()
+  imageLoaded.value = false;
+
+  const reader = new FileReader();
   reader.onload = (e) => {
-    imageData.value = e.target?.result as string
-    emit('update:imageData', imageData.value)
+    imageData.value = e.target?.result as string;
+    emit('update:imageData', imageData.value);
     nextTick(() => {
-      loadImageAndSetupCanvas()
+      loadImageAndSetupCanvas();
       // Auto-open dialog for new images
-      dialogOpen.value = true
-    })
-  }
-  reader.readAsDataURL(file)
+      dialogOpen.value = true;
+    });
+  };
+  reader.readAsDataURL(file);
 }
 
 function triggerFileInput() {
-  fileInputRef.value?.click()
+  fileInputRef.value?.click();
 }
 
 function loadImageAndSetupCanvas() {
-  if (!imageData.value) return
-  
-  const img = new Image()
-  img.crossOrigin = 'anonymous'
-  
+  if (!imageData.value) return;
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+
   img.onload = () => {
-    imageElement.value = img
-    imageLoaded.value = true
-    nextTick(() => setupCanvas())
-  }
-  
+    imageElement.value = img;
+    imageLoaded.value = true;
+    nextTick(() => setupCanvas());
+  };
+
   img.onerror = () => {
-    console.error('Failed to load image')
-    imageLoaded.value = false
-  }
-  
-  img.src = imageData.value
+    console.error('Failed to load image');
+    imageLoaded.value = false;
+  };
+
+  img.src = imageData.value;
 }
 
 function setupCanvas() {
-  const canvas = canvasRef.value
-  const container = containerRef.value
-  const img = imageElement.value
+  const canvas = canvasRef.value;
+  const container = containerRef.value;
+  const img = imageElement.value;
 
-  if (!canvas || !container || !img) return
+  if (!canvas || !container || !img) return;
 
-  const containerWidth = Math.max(container.clientWidth, 200)
-  const maxHeight = 300
-  
-  const scaleX = containerWidth / img.width
-  const scaleY = maxHeight / img.height
-  const displayScale = Math.min(scaleX, scaleY, 1)
-  canvasScale.value = displayScale
+  const containerWidth = Math.max(container.clientWidth, 200);
+  const maxHeight = 300;
 
-  const displayWidth = Math.floor(img.width * displayScale)
-  const displayHeight = Math.floor(img.height * displayScale)
-  
-  const dpr = window.devicePixelRatio || 1
-  
-  canvas.width = img.width * Math.min(dpr, 2)
-  canvas.height = img.height * Math.min(dpr, 2)
-  
-  canvas.style.width = `${displayWidth}px`
-  canvas.style.height = `${displayHeight}px`
+  const scaleX = containerWidth / img.width;
+  const scaleY = maxHeight / img.height;
+  const displayScale = Math.min(scaleX, scaleY, 1);
+  canvasScale.value = displayScale;
 
-  redrawCanvas()
+  const displayWidth = Math.floor(img.width * displayScale);
+  const displayHeight = Math.floor(img.height * displayScale);
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = img.width * Math.min(dpr, 2);
+  canvas.height = img.height * Math.min(dpr, 2);
+
+  canvas.style.width = `${displayWidth}px`;
+  canvas.style.height = `${displayHeight}px`;
+
+  redrawCanvas();
 }
 
 function redrawCanvas() {
-  const canvas = canvasRef.value
-  const ctx = canvas?.getContext('2d')
-  const img = imageElement.value
+  const canvas = canvasRef.value;
+  const ctx = canvas?.getContext('2d');
+  const img = imageElement.value;
 
-  if (!canvas || !ctx || !img) return
+  if (!canvas || !ctx || !img) return;
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  const internalScale = canvas.width / img.width
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const internalScale = canvas.width / img.width;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
   // Draw occlusions as solid rectangles (preview only)
   occlusions.value.forEach((occ, index) => {
-    const x = occ.x * internalScale
-    const y = occ.y * internalScale
-    const width = occ.width * internalScale
-    const height = occ.height * internalScale
-    const color = occ.label || '#EF4444'
+    const x = occ.x * internalScale;
+    const y = occ.y * internalScale;
+    const width = occ.width * internalScale;
+    const height = occ.height * internalScale;
+    const color = occ.label || '#EF4444';
 
     // Solid fill
-    ctx.fillStyle = color
-    ctx.fillRect(x, y, width, height)
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, width, height);
 
     // Border
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)'
-    ctx.lineWidth = 1 * dpr
-    ctx.strokeRect(x, y, width, height)
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1 * dpr;
+    ctx.strokeRect(x, y, width, height);
 
     // Label
-    ctx.fillStyle = 'white'
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-    ctx.lineWidth = 2 * dpr
-    const fontSize = Math.max(14 * dpr, Math.min(width, height) * 0.35)
-    ctx.font = `bold ${fontSize}px sans-serif`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.strokeText(`${index + 1}`, x + width / 2, y + height / 2)
-    ctx.fillText(`${index + 1}`, x + width / 2, y + height / 2)
-  })
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 2 * dpr;
+    const fontSize = Math.max(14 * dpr, Math.min(width, height) * 0.35);
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeText(`${index + 1}`, x + width / 2, y + height / 2);
+    ctx.fillText(`${index + 1}`, x + width / 2, y + height / 2);
+  });
 }
 
 function openEditor() {
-  dialogOpen.value = true
+  dialogOpen.value = true;
 }
 
 function handleDialogSave(newOcclusions: ImageOcclusion[]) {
-  occlusions.value = newOcclusions
-  emit('update:occlusions', occlusions.value)
-  dialogOpen.value = false
-  nextTick(() => redrawCanvas())
+  occlusions.value = newOcclusions;
+  emit('update:occlusions', occlusions.value);
+  dialogOpen.value = false;
+  nextTick(() => redrawCanvas());
 }
 
 function handleDialogCancel() {
-  dialogOpen.value = false
+  dialogOpen.value = false;
 }
 
 function handleSave() {
   emit('save', {
     imageData: imageData.value,
-    occlusions: occlusions.value,
-  })
+    occlusions: occlusions.value
+  });
 }
 
 function handleResize() {
   if (imageLoaded.value) {
-    setupCanvas()
+    setupCanvas();
   }
 }
 
 // Watchers
 watch(() => props.imageData, (newVal) => {
   if (newVal !== imageData.value) {
-    imageData.value = newVal || ''
+    imageData.value = newVal || '';
     if (imageData.value) {
-      nextTick(() => loadImageAndSetupCanvas())
+      nextTick(() => loadImageAndSetupCanvas());
     }
   }
-})
+});
 
 watch(() => props.occlusions, (newVal) => {
   if (newVal) {
-    occlusions.value = [...newVal]
-    nextTick(() => redrawCanvas())
+    occlusions.value = [...newVal];
+    nextTick(() => redrawCanvas());
   }
-}, { deep: true })
+}, { deep: true });
 
 onMounted(() => {
   if (imageData.value) {
-    loadImageAndSetupCanvas()
+    loadImageAndSetupCanvas();
   }
-  window.addEventListener('resize', handleResize)
-})
+  window.addEventListener('resize', handleResize);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-})
+  window.removeEventListener('resize', handleResize);
+});
 </script>
 
 <template>
@@ -233,7 +233,7 @@ onUnmounted(() => {
       accept="image/*"
       class="hidden"
       @change="handleFileSelect"
-    />
+    >
 
     <!-- Upload Area (no image) -->
     <div v-if="!hasImage">
@@ -254,7 +254,10 @@ onUnmounted(() => {
     </div>
 
     <!-- Preview (with image) -->
-    <div v-else class="space-y-3">
+    <div
+      v-else
+      class="space-y-3"
+    >
       <!-- Preview Card -->
       <Card
         class="relative overflow-hidden cursor-pointer group"
@@ -270,7 +273,10 @@ onUnmounted(() => {
             ref="canvasRef"
             class="block max-w-full rounded"
           />
-          <div v-if="!imageLoaded" class="py-8 text-muted-foreground text-sm">
+          <div
+            v-if="!imageLoaded"
+            class="py-8 text-muted-foreground text-sm"
+          >
             Carregando...
           </div>
         </div>
@@ -306,7 +312,11 @@ onUnmounted(() => {
           <Check class="w-4 h-4 mr-1.5" />
           Criar Card
         </Button>
-        <Button variant="outline" class="text-sm" @click="emit('cancel')">
+        <Button
+          variant="outline"
+          class="text-sm"
+          @click="emit('cancel')"
+        >
           Cancelar
         </Button>
       </div>

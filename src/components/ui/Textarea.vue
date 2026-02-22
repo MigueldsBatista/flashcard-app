@@ -1,15 +1,15 @@
 <script setup lang="ts">
 interface Props {
-  modelValue?: string
-  placeholder?: string
-  rows?: number
-  disabled?: boolean
+  modelValue?: string;
+  placeholder?: string;
+  rows?: number;
+  disabled?: boolean;
 }
 
-defineProps<Props>()
+defineProps<Props>();
 defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  'update:modelValue': [value: string];
+}>();
 </script>
 
 <template>
