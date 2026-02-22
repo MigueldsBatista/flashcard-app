@@ -6,7 +6,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  max: 100
+  max: 100,
+  class: ''
 });
 
 const percentage = Math.min(100, Math.max(0, (props.value / props.max) * 100));

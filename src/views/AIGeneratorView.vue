@@ -2,6 +2,8 @@
 import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
 import Dialog from '@/components/ui/Dialog.vue';
+import Input from '@/components/ui/Input.vue';
+import Select from '@/components/ui/Select.vue';
 import Tabs from '@/components/ui/Tabs.vue';
 import Textarea from '@/components/ui/Textarea.vue';
 import { useDeckOperations } from '@/composables/useDeckOperations';
@@ -67,6 +69,31 @@ const isSaving = ref(false);
 
 // Computed
 const availableDecks = computed(() => store.decks);
+const deckOptions = computed(() =>
+  availableDecks.value.map(deck => ({
+    value: deck.id,
+    label: deck.name
+  }))
+);
+
+const numCardsInput = computed({
+  get: () => (numCards.value === null ? '' : String(numCards.value)),
+  set: (value: string) => {
+    if (!value.trim()) {
+      numCards.value = null;
+      return;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      numCards.value = null;
+      return;
+    }
+
+    const clamped = Math.max(1, Math.min(20, Math.trunc(parsed)));
+    numCards.value = clamped;
+  }
+});
 
 const canSave = computed(() => {
   if (selectedCardsCount.value === 0) return false;
@@ -357,14 +384,14 @@ function closePreview() {
               <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
                 Quantidade de cards (opcional)
               </label>
-              <input
-                v-model.number="numCards"
+              <Input
+                v-model="numCardsInput"
                 type="number"
                 min="1"
                 max="20"
                 placeholder="5"
-                class="w-24 px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
+                class="w-24"
+              />
             </div>
           </template>
         </Tabs>
@@ -457,34 +484,20 @@ function closePreview() {
               </div>
 
               <!-- Existing deck selector -->
-              <select
+              <Select
                 v-if="!showNewDeckInput"
                 v-model="selectedDeckId"
-                class="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option
-                  value=""
-                  disabled
-                >
-                  Selecione um baralho
-                </option>
-                <option
-                  v-for="deck in availableDecks"
-                  :key="deck.id"
-                  :value="deck.id"
-                >
-                  {{ deck.name }}
-                </option>
-              </select>
+                :options="deckOptions"
+                placeholder="Selecione um baralho"
+              />
 
               <!-- New deck input -->
-              <input
+              <Input
                 v-else
                 v-model="newDeckName"
                 type="text"
                 placeholder="Nome do novo baralho..."
-                class="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
+              />
             </div>
 
             <!-- Generated Cards List -->
