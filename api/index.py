@@ -1,7 +1,10 @@
 import logging
+
 from dotenv import load_dotenv
 
-load_dotenv()
+loaded = load_dotenv()
+
+print(f"Environment variables loaded: {loaded}")
 
 logging.basicConfig(level=logging.INFO)
 

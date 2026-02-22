@@ -11,6 +11,7 @@ import os
 import unittest
 from unittest.mock import patch
 
+import jwt
 from fastapi.testclient import TestClient
 
 try:
@@ -32,7 +33,19 @@ class BaseAPITest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        os.environ.setdefault("SUPABASE_JWT_SECRET", "test-supabase-jwt-secret")
         cls.client = TestClient(app, raise_server_exceptions=False)
+
+    def auth_headers(self, ip: str = "127.0.0.1") -> dict:
+        token = jwt.encode(
+            {"sub": "test-user", "aud": "authenticated"},
+            os.environ["SUPABASE_JWT_SECRET"],
+            algorithm="HS256",
+        )
+        return {
+            "Authorization": f"Bearer {token}",
+            "x-forwarded-for": ip,
+        }
 
     def get_detail(self, response) -> dict:
         return response.json()["detail"]
@@ -107,6 +120,7 @@ class TestFakeProvider(BaseAPITest):
             response = self.client.post(
                 "/api/generate",
                 data={"text": "Photossíntese é o processo pelo qual plantas produzem alimento."},
+                headers=self.auth_headers(),
             )
 
         self.assertEqual(response.status_code, 200)
@@ -120,6 +134,7 @@ class TestFakeProvider(BaseAPITest):
             response = self.client.post(
                 "/api/generate",
                 data={"text": "Fotossíntese converte luz solar em energia química."},
+                headers=self.auth_headers(),
             )
 
         self.assertEqual(response.status_code, 200)
@@ -141,11 +156,19 @@ class TestFakeProvider(BaseAPITest):
 
         # fake provider
         with patch.dict(os.environ, {"LLM_PROVIDER": "fake"}, clear=False):
-            fake_resp = self.client.post("/api/generate", data={"text": "word " * 20})
+            fake_resp = self.client.post(
+                "/api/generate",
+                data={"text": "word " * 20},
+                headers=self.auth_headers(),
+            )
 
         # mocked real provider
         with patch("routes.generate.get_llm", return_value=mock_llm):
-            real_resp = self.client.post("/api/generate", data={"text": "word " * 20})
+            real_resp = self.client.post(
+                "/api/generate",
+                data={"text": "word " * 20},
+                headers=self.auth_headers(),
+            )
 
         self.assertEqual(fake_resp.status_code, real_resp.status_code)
         self.assertEqual(set(fake_resp.json().keys()), set(real_resp.json().keys()))

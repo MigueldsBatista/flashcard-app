@@ -11,6 +11,7 @@ import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import jwt
 from fastapi.testclient import TestClient
 
 try:
@@ -28,7 +29,19 @@ class BaseAPITest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        os.environ.setdefault("SUPABASE_JWT_SECRET", "test-supabase-jwt-secret")
         cls.client = TestClient(app, raise_server_exceptions=False)
+
+    def auth_headers(self, ip: str = "127.0.0.1") -> dict:
+        token = jwt.encode(
+            {"sub": "test-user", "aud": "authenticated"},
+            os.environ["SUPABASE_JWT_SECRET"],
+            algorithm="HS256",
+        )
+        return {
+            "Authorization": f"Bearer {token}",
+            "x-forwarded-for": ip,
+        }
 
     def get_detail(self, response) -> dict:
         """Return the 'detail' dict from a JSON error response."""
@@ -66,12 +79,12 @@ class BaseAPITest(unittest.TestCase):
 class TestNoContent(BaseAPITest):
     def test_returns_400(self):
         """POST without image or text must return 400 NO_CONTENT."""
-        response = self.client.post("/api/generate")
+        response = self.client.post("/api/generate", headers=self.auth_headers())
         self.assertErrorCode(response, 400, "NO_CONTENT")
 
     def test_includes_suggestion(self):
         """NO_CONTENT response must include a suggestion."""
-        response = self.client.post("/api/generate")
+        response = self.client.post("/api/generate", headers=self.auth_headers())
         detail = self.get_detail(response)
         self.assertIn("suggestion", detail)
 
@@ -87,6 +100,7 @@ class TestExtractionFailed(BaseAPITest):
             response = self.client.post(
                 "/api/generate",
                 files={"image": ("test.png", b"not-an-image", "image/png")},
+                headers=self.auth_headers(),
             )
         self.assertErrorCode(response, 400, "EXTRACTION_FAILED")
 
@@ -96,6 +110,7 @@ class TestExtractionFailed(BaseAPITest):
             response = self.client.post(
                 "/api/generate",
                 files={"image": ("test.png", b"\x89PNG\r\n\x1a\n", "image/png")},
+                headers=self.auth_headers(),
             )
         self.assertErrorCode(response, 400, "EXTRACTION_FAILED")
 
@@ -115,7 +130,11 @@ class TestRateLimit(BaseAPITest):
             patch("routes.generate.get_llm", return_value=mock_llm),
             patch("services.generation.asyncio.sleep", new_callable=AsyncMock),
         ):
-            response = self.client.post("/api/generate", data={"text": "word " * 20})
+            response = self.client.post(
+                "/api/generate",
+                data={"text": "word " * 20},
+                headers=self.auth_headers(),
+            )
 
         self.assertErrorCode(response, 429, "RATE_LIMITED")
 
@@ -130,7 +149,11 @@ class TestAIParseFailed(BaseAPITest):
         mock_llm = self._make_llm_mock(response_text="this is not json at all {{{")
 
         with patch("routes.generate.get_llm", return_value=mock_llm):
-            response = self.client.post("/api/generate", data={"text": "word " * 20})
+            response = self.client.post(
+                "/api/generate",
+                data={"text": "word " * 20},
+                headers=self.auth_headers(),
+            )
 
         self.assertErrorCode(response, 500, "AI_PARSE_FAILED")
 
@@ -146,7 +169,11 @@ class TestMissingConfig(BaseAPITest):
         env_remove = {"GEMINI_API_KEY": ""}
         with patch.dict(os.environ, {**env_override}, clear=False):
             os.environ.pop("GEMINI_API_KEY", None)
-            response = self.client.post("/api/generate", data={"text": "word " * 20})
+            response = self.client.post(
+                "/api/generate",
+                data={"text": "word " * 20},
+                headers=self.auth_headers(),
+            )
 
         self.assertErrorCode(response, 500, "MISSING_CONFIG")
 
@@ -157,13 +184,17 @@ class TestMissingConfig(BaseAPITest):
 
 class TestErrorBodyShape(BaseAPITest):
     def test_no_content_has_required_fields(self):
-        response = self.client.post("/api/generate")
+        response = self.client.post("/api/generate", headers=self.auth_headers())
         self.assertErrorCode(response, 400, "NO_CONTENT")
 
     def test_missing_config_has_required_fields(self):
         with patch.dict(os.environ, {"LLM_PROVIDER": "gemini"}, clear=False):
             os.environ.pop("GEMINI_API_KEY", None)
-            response = self.client.post("/api/generate", data={"text": "word " * 20})
+            response = self.client.post(
+                "/api/generate",
+                data={"text": "word " * 20},
+                headers=self.auth_headers(),
+            )
         self.assertErrorCode(response, 500, "MISSING_CONFIG")
 
 
