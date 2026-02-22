@@ -89,7 +89,7 @@ Run unit tests with Vitest:
 bun test:unit
 ```
 
-Run linting (ESLint + Oxlint):
+Run linting (ESLint):
 
 ```bash
 bun lint

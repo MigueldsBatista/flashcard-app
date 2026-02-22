@@ -2,7 +2,6 @@ import stylistic from '@stylistic/eslint-plugin';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import pluginVitest from '@vitest/eslint-plugin';
-import pluginOxlint from 'eslint-plugin-oxlint';
 import tsdoc from 'eslint-plugin-tsdoc';
 import vue from 'eslint-plugin-vue';
 import { defineConfig } from 'eslint/config';
@@ -121,6 +120,5 @@ export default defineConfig([
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*']
-  },
-  ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json')
+  }
 ]);

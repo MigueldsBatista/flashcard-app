@@ -4,7 +4,7 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 import MarkdownIt from 'markdown-it';
 import { computed } from 'vue';
-import OcclusionCardViewer from './OcclusionCardViewer.vue';
+import OcclusionCardViewer from '@/components/OcclusionCardViewer.vue';
 
 interface Props {
   card: Card;
