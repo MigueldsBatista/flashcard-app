@@ -98,7 +98,8 @@ async def call_llm_with_retry(llm, prompt: str, max_retries: int = 3) -> str:
             error_str = str(e)
 
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                wait_time = (attempt + 1) * 5
+                # Gemini free tier has strict limits (15 RPM). Wait longer.
+                wait_time = (attempt + 1) * 15
                 logger.warning(
                     f"⚠️ Rate limit hit (attempt {attempt + 1}/{max_retries}). "
                     f"Waiting {wait_time}s..."

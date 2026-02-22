@@ -1,6 +1,6 @@
-import type { CardContent } from '@/types/flashcard';
-import type { GeneratedCard, GenerateOptions, IAIGeneratorService } from '@/services/types';
 import { supabase } from '@/lib/supabase';
+import type { GeneratedCard, GenerateOptions, IAIGeneratorService } from '@/services/types';
+import type { CardContent } from '@/types/flashcard';
 
 interface AIGenerateResponse {
   cards: Array<{ content: CardContent }>;
@@ -43,15 +43,17 @@ export class ApiAIGeneratorService implements IAIGeneratorService {
 
   private async send(formData: FormData): Promise<GeneratedCard[]> {
     const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
 
-    const headers: HeadersInit = {};
-    if (session?.access_token) {
-      headers.Authorization = `Bearer ${session.access_token}`;
+    if (!accessToken) {
+      throw new Error('Usuário não autenticado. Faça login novamente.');
     }
 
     const response = await fetch(this.endpoint, {
       method: 'POST',
-      headers,
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      },
       body: formData
     });
 

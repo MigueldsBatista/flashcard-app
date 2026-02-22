@@ -1,16 +1,3 @@
-"""
-LLM abstraction layer for the Flashcard AI API.
-
-All language-model calls go through `get_llm()`, which returns a LangChain
-`BaseChatModel`-compatible object chosen by the LLM_PROVIDER env var:
-
-    LLM_PROVIDER=gemini  → ChatGoogleGenerativeAI (default)
-    LLM_PROVIDER=openai  → ChatOpenAI  (model from LLM_MODEL, default gpt-4o-mini)
-    LLM_PROVIDER=fake    → FakeListChatModel  (for tests, no network calls)
-
-Switching provider requires ONLY an env-var change — no code modifications.
-"""
-
 from __future__ import annotations
 
 import os
@@ -25,7 +12,7 @@ from langchain_core.language_models import BaseChatModel
 
 def get_llm() -> BaseChatModel:
     """Return a LangChain BaseChatModel selected by the LLM_PROVIDER env var."""
-    provider = os.environ.get("LLM_PROVIDER", "gemini").lower()
+    provider = os.environ.get("LLM_PROVIDER", "groq").lower()
 
     if provider == "gemini":
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -55,6 +42,22 @@ def get_llm() -> BaseChatModel:
         return ChatOpenAI(
             model=os.environ.get("LLM_MODEL", "gpt-4o-mini"),
             openai_api_key=api_key,
+            temperature=0.4,
+            max_tokens=2048,
+        )
+        
+    if provider == "groq":
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            raise MissingConfigException(
+                "GROQ_API_KEY não configurada",
+                suggestion="Defina a variável de ambiente GROQ_API_KEY",
+            )
+        from langchain_groq import ChatGroq
+
+        return ChatGroq(
+            model=os.environ.get("LLM_MODEL", "llama-3.1-8b-instant"),
+            groq_api_key=api_key,
             temperature=0.4,
             max_tokens=2048,
         )
