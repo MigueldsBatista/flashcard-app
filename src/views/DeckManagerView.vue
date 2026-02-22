@@ -2,7 +2,9 @@
 import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
 import Dialog from '@/components/ui/Dialog.vue';
+import Input from '@/components/ui/Input.vue';
 import LoadingState from '@/components/ui/LoadingState.vue';
+import Textarea from '@/components/ui/Textarea.vue';
 import { useDeckIcons } from '@/composables/useDeckIcons';
 import { useFlashcardStore } from '@/stores/flashcard';
 import type { Deck } from '@/types/flashcard';
@@ -134,23 +136,23 @@ function handleDeleteDeck(deck: Deck) {
               <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
                 Nome
               </label>
-              <input
+              <Input
                 v-model="newDeckName"
                 type="text"
                 placeholder="Nome do baralho"
-                class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
+                class="bg-background"
+              />
             </div>
 
             <div>
               <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
                 Descrição (opcional)
               </label>
-              <textarea
+              <Textarea
                 v-model="newDeckDescription"
                 placeholder="Descrição do baralho"
-                rows="2"
-                class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                :rows="2"
+                class="bg-background"
               />
             </div>
 
@@ -336,12 +338,12 @@ function handleDeleteDeck(deck: Deck) {
     </div>
 
     <!-- Floating Action Button - hidden on desktop -->
-    <button
+    <Button
       class="fixed bottom-24 right-4 bg-primary hover:bg-primary-hover text-primary-foreground rounded-full shadow-lg flex items-center gap-2 px-4 py-3 transition-all active:scale-95 z-30 md:hidden"
       @click="isCreating = true"
     >
       <FolderPlus class="w-5 h-5" />
       <span class="text-sm font-medium">Baralho</span>
-    </button>
+    </Button>
   </div>
 </template>

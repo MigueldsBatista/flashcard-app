@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import GoogleLogo from '@/components/icons/GoogleLogo.vue';
+import UltraFocusLogo from '@/components/icons/UltraFocusLogo.vue';
+import Button from '@/components/ui/Button.vue';
 import { supabase } from '@/lib/supabase';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -18,17 +21,36 @@ async function handleLogin() {
     password: password.value
   });
 
-  if (authError) {
-    if (authError.message === 'Email not confirmed') {
-      error.value = 'Please check your email to confirm your account before logging in.';
-    } else {
-      error.value = authError.message;
-    }
-  } else {
+  loading.value = false;
+
+  if (!authError) {
     router.push('/');
+    return;
   }
 
+  if (authError.message === 'Email not confirmed') {
+    error.value = 'Please check your email to confirm your account before logging in.';
+  } else {
+    error.value = authError.message;
+  }
+}
+
+async function handleGoogleLogin() {
+  loading.value = true;
+  error.value = '';
+
+  const { error: authError } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/`
+    }
+  });
+
   loading.value = false;
+
+  if (authError) {
+    error.value = authError.message;
+  }
 }
 </script>
 
@@ -37,19 +59,7 @@ async function handleLogin() {
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
       <!-- Logo -->
       <div class="flex justify-center">
-        <svg
-          class="h-16 w-16 text-blue-600 dark:text-blue-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-          />
-        </svg>
+        <ultra-focus-logo />
       </div>
       <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
         Ultra Focus
@@ -119,17 +129,46 @@ async function handleLogin() {
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
               :disabled="loading"
-              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors duration-200"
+              size="md"
+              class="w-full flex border border-transparent rounded-md shadow-sm text-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-blue-500 duration-200"
             >
               <span v-if="loading">Signing in...</span>
               <span v-else>Sign in</span>
-            </button>
+            </Button>
           </div>
         </form>
 
+        <!-- Divider -->
+        <div class="mt-6">
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300 dark:border-gray-600"/>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-white dark:bg-slate-800 text-gray-500">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <Button
+              @click="handleGoogleLogin"
+              :disabled="loading"
+              variant="outline"
+              size="md"
+              class="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:border-slate-600 dark:text-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:focus:ring-offset-slate-800 disabled:opacity-50 transition-colors duration-200"
+            >
+              <google-logo />
+              Sign in with Google
+            </Button>
+          </div>
+        </div>
+
+        <!-- Register link -->
         <div class="mt-6">
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
@@ -144,12 +183,12 @@ async function handleLogin() {
 
           <div class="mt-6 grid grid-cols-1 gap-3">
             <div class="text-center">
-              <router-link
+              <RouterLink
                 to="/register"
                 class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
               >
                 Create an account
-              </router-link>
+              </RouterLink>
             </div>
           </div>
         </div>

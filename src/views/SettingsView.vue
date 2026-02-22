@@ -225,7 +225,7 @@ function toggleDarkMode(value: boolean) {
                   </div>
                   <div class="text-sm">
                     <p class="font-medium text-foreground">Usuário</p>
-                    <p class="text-xs text-muted-foreground truncate max-w-[150px]">{{ authStore.user?.email }}</p>
+                    <p class="text-xs text-muted-foreground truncate max-w-37.5">{{ authStore.user?.email }}</p>
                   </div>
                 </div>
               </div>

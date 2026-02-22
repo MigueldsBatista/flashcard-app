@@ -7,6 +7,7 @@ import { useNotifications } from '@/composables/useNotifications';
 import { getDueCards, getNewCards, prioritizeCards } from '@/services/spaced-repetition';
 import { useFlashcardStore } from '@/stores/flashcard';
 import type { CardDifficulty, Card as FlashCard } from '@/types/flashcard';
+import { useEventListener } from '@vueuse/core';
 import { ArrowLeft, Calendar, CheckCircle2, RotateCcw } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -59,21 +60,21 @@ onMounted(() => {
 
   if (deckId.value) {
     store.startStudySession(deckId.value);
-    ''; } else if (route.query.decks) {
+  } else if (route.query.decks) {
     const deckIds = (route.query.decks as string).split(',');
     if (deckIds[0]) {
       store.startStudySession(deckIds[0]);
     }
   }
-  window.addEventListener('keydown', handleKeyPress);
 });
+
+useEventListener('keydown', handleKeyPress);
 
 onUnmounted(() => {
   // Safety net: end session if it wasn't already ended by handleEndStudy
   if (store.currentSession) {
     store.endStudySession();
   }
-  window.removeEventListener('keydown', handleKeyPress);
 });
 
 function handleKeyPress(e: KeyboardEvent) {
