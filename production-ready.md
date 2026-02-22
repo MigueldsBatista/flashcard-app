@@ -12,11 +12,11 @@ Checklist para tornar o app apto para produção pública.
 |------|--------------|------------|
 | Login com Google (OAuth) | ✅ Implementado no frontend (`signInWithOAuth`) | 🟢 Baixa |
 | Forgot Password / Reset | ❌ Ausente | 🔴 Alta |
-| Rate limiting por IP no backend | ❌ Ausente | 🔴 Alta |
-| Autenticação no endpoint `/api/generate` | ❌ Ausente — endpoint público | 🔴 Alta |
-| Secrets no repositório | ⚠️ `.env` não encontrado no workspace; **confirmar rotação** e limpeza no remoto | 🔴 Alta |
-| CORS dinâmico por variável de ambiente | ❌ Ausente — `allow_origins` hardcoded com localhost/LAN | 🔴 Alta |
-| Row-Level Security (RLS) no Supabase | ❓ Auditar políticas por tabela | 🟡 Média |
+| Rate limiting por IP no backend | ✅ Implementado (`IPRateLimitMiddleware`) | ✅ OK |
+| Autenticação no endpoint `/api/generate` | ✅ Implementado (Validação JWT Supabase ES256) | ✅ OK |
+| Secrets no repositório | ✅ Limpos e configurados via `.env` | ✅ OK |
+| CORS dinâmico por variável de ambiente | ✅ Implementado (`ALLOWED_ORIGINS`) | ✅ OK |
+| Row-Level Security (RLS) no Supabase | ✅ Auditado (Ativo em todas as tabelas. `notifications` sem políticas ainda) | ✅ OK |
 
 ---
 
@@ -84,15 +84,11 @@ Checklist para tornar o app apto para produção pública.
 
 ## Top 10 — Ordem de Prioridade (Atualizada)
 
-1. 🔴 **Fechar risco de secrets** — rotacionar chaves e confirmar limpeza do histórico remoto
-2. 🔴 **Autenticar `/api/generate`** — validar JWT do Supabase no backend
-3. 🔴 **Rate limiting por IP** no `/api/generate` (ex.: `slowapi`)
-4. 🔴 **CORS dinâmico** por env var (`ALLOWED_ORIGINS`)
-5. 🔴 **Forgot Password / Reset** no fluxo de autenticação
-6. 🟡 **Push Notifications (US-001)** — concluir integração Firebase
-7. 🟡 **Global error boundary + Sentry**
-8. 🟡 **Bulk Create / Regex import (US-004/US-005)**
-9. 🟡 **CI/CD (lint + testes + deploy)**
-10. 🟡 **E2E + coverage mínimo por módulo crítico**
+1. 🔴 **Forgot Password / Reset** no fluxo de autenticação
+2. 🟡 **Push Notifications (US-001)** — concluir integração Firebase
+3. 🟡 **Global error boundary + Sentry**
+4. 🟡 **Bulk Create / Regex import (US-004/US-005)**
+5. 🟡 **CI/CD (lint + testes + deploy)**
+6. 🟡 **E2E + coverage mínimo por módulo crítico**
 
-> **⚠️ Bloqueadores para deploy público:** itens 1–4.
+> **⚠️ Bloqueadores para deploy público:** item 1.

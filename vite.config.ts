@@ -22,7 +22,7 @@ export default defineConfig({
     vueDevTools(),
     tailwindcss(),
     VitePWA({
-      manifestFilename: 'manifest.webmanisfest',
+      manifestFilename: 'manifest.webmanifest',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
@@ -36,7 +36,7 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-          src: "/icons/icon-192.png",
+            src: "/icons/icon-192.png",
             sizes: "192x192",
             type: "image/png"
           },
