@@ -1,101 +1,101 @@
 <script setup lang="ts">
-import OcclusionColorPicker from '@/components/OcclusionColorPicker.vue'
-import Button from '@/components/ui/Button.vue'
-import UndoRedoControls from '@/components/UndoRedoControls.vue'
-import type { ImageOcclusion } from '@/types/flashcard'
-import { useManualRefHistory } from '@vueuse/core'
-import { Check, Minus, Plus, RotateCcw, Trash2, X, ZoomIn } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import OcclusionColorPicker from '@/components/OcclusionColorPicker.vue';
+import Button from '@/components/ui/Button.vue';
+import UndoRedoControls from '@/components/UndoRedoControls.vue';
+import type { ImageOcclusion } from '@/types/flashcard';
+import { useManualRefHistory } from '@vueuse/core';
+import { Check, Minus, Plus, RotateCcw, Trash2, X, ZoomIn } from 'lucide-vue-next';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 interface Props {
-  open: boolean
-  imageData: string
-  occlusions: ImageOcclusion[]
+  open: boolean;
+  imageData: string;
+  occlusions: ImageOcclusion[];
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:open': [value: boolean]
-  save: [occlusions: ImageOcclusion[]]
-  cancel: []
-}>()
+  'update:open': [value: boolean];
+  save: [occlusions: ImageOcclusion[]];
+  cancel: [];
+}>();
 
 // Refs
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const containerRef = ref<HTMLDivElement | null>(null)
-const imageElement = ref<HTMLImageElement | null>(null)
-const imageLoaded = ref(false)
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+const containerRef = ref<HTMLDivElement | null>(null);
+const imageElement = ref<HTMLImageElement | null>(null);
+const imageLoaded = ref(false);
 
 // State
-const localOcclusions = ref<ImageOcclusion[]>([])
-const selectedOcclusionId = ref<string | null>(null)
-const occlusionColor = ref('#EF4444')
-const canvasScale = ref(1)
+const localOcclusions = ref<ImageOcclusion[]>([]);
+const selectedOcclusionId = ref<string | null>(null);
+const occlusionColor = ref('#EF4444');
+const canvasScale = ref(1);
 
 // Zoom
-const zoom = ref(1)
-const MIN_ZOOM = 0.5
-const MAX_ZOOM = 4
+const zoom = ref(1);
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 4;
 
 // Touch state for pinch detection
-const initialPinchDistance = ref<number | null>(null)
-const initialPinchZoom = ref(1)
-const isTouchInteracting = ref(false)
+const initialPinchDistance = ref<number | null>(null);
+const initialPinchZoom = ref(1);
+const isTouchInteracting = ref(false);
 
 // Interaction modes
-type InteractionMode = 'draw' | 'move' | 'resize' | 'none'
-const interactionMode = ref<InteractionMode>('none')
-const isInteracting = ref(false)
-const startPoint = ref<{ x: number; y: number } | null>(null)
-const currentRect = ref<{ x: number; y: number; width: number; height: number } | null>(null)
+type InteractionMode = 'draw' | 'move' | 'resize' | 'none';
+const interactionMode = ref<InteractionMode>('none');
+const isInteracting = ref(false);
+const startPoint = ref<{ x: number; y: number } | null>(null);
+const currentRect = ref<{ x: number; y: number; width: number; height: number } | null>(null);
 
 // Resize handles
-type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | null
-const activeHandle = ref<ResizeHandle>(null)
-const resizeStartRect = ref<ImageOcclusion | null>(null)
-const moveStartOcclusion = ref<ImageOcclusion | null>(null)
+type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | null;
+const activeHandle = ref<ResizeHandle>(null);
+const resizeStartRect = ref<ImageOcclusion | null>(null);
+const moveStartOcclusion = ref<ImageOcclusion | null>(null);
 
 // History with manual commits
 const { history, commit, undo, redo, canUndo, canRedo, clear: clearHistory } = useManualRefHistory(
   localOcclusions,
   {
     capacity: 50,
-    clone: (v) => JSON.parse(JSON.stringify(v)),
+    clone: (v) => JSON.parse(JSON.stringify(v))
   }
-)
+);
 
 // Commit a snapshot to history
 function commitToHistory() {
-  commit()
+  commit();
 }
 
 // Keyboard shortcuts
 function handleKeyDown(event: KeyboardEvent) {
-  if (!props.open) return
-  
+  if (!props.open) return;
+
   if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault()
+    event.preventDefault();
     if (event.shiftKey) {
       if (canRedo.value) {
-        redo()
-        redrawCanvas()
+        redo();
+        redrawCanvas();
       }
     } else {
       if (canUndo.value) {
-        undo()
-        redrawCanvas()
+        undo();
+        redrawCanvas();
       }
     }
   }
-  
+
   if (event.key === 'Escape') {
-    emit('cancel')
+    emit('cancel');
   }
-  
+
   if (event.key === 'Delete' || event.key === 'Backspace') {
     if (selectedOcclusionId.value) {
-      deleteSelectedOcclusion()
+      deleteSelectedOcclusion();
     }
   }
 }
@@ -103,126 +103,126 @@ function handleKeyDown(event: KeyboardEvent) {
 // Computed
 const selectedOcclusion = computed(() =>
   localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
-)
+);
 
 // Initialize
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
-    localOcclusions.value = JSON.parse(JSON.stringify(props.occlusions))
-    selectedOcclusionId.value = null
-    zoom.value = 1
-    clearHistory() // Clear history
-    commit() // Commit initial state
-    nextTick(() => loadImage())
+    localOcclusions.value = JSON.parse(JSON.stringify(props.occlusions));
+    selectedOcclusionId.value = null;
+    zoom.value = 1;
+    clearHistory(); // Clear history
+    commit(); // Commit initial state
+    nextTick(() => loadImage());
   }
-}, { immediate: true })
+}, { immediate: true });
 
 function loadImage() {
-  if (!props.imageData) return
-  
-  const img = new Image()
-  img.crossOrigin = 'anonymous'
-  
+  if (!props.imageData) return;
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+
   img.onload = () => {
-    imageElement.value = img
-    imageLoaded.value = true
-    nextTick(() => setupCanvas())
-  }
-  
-  img.src = props.imageData
+    imageElement.value = img;
+    imageLoaded.value = true;
+    nextTick(() => setupCanvas());
+  };
+
+  img.src = props.imageData;
 }
 
 function setupCanvas() {
-  const canvas = canvasRef.value
-  const container = containerRef.value
-  const img = imageElement.value
+  const canvas = canvasRef.value;
+  const container = containerRef.value;
+  const img = imageElement.value;
 
-  if (!canvas || !container || !img) return
+  if (!canvas || !container || !img) return;
 
-  const containerWidth = container.clientWidth - 32
-  const containerHeight = container.clientHeight - 32
-  
-  const scaleX = containerWidth / img.width
-  const scaleY = containerHeight / img.height
-  const displayScale = Math.min(scaleX, scaleY, 1)
-  canvasScale.value = displayScale
+  const containerWidth = container.clientWidth - 32;
+  const containerHeight = container.clientHeight - 32;
 
-  const displayWidth = Math.floor(img.width * displayScale)
-  const displayHeight = Math.floor(img.height * displayScale)
-  
-  const dpr = window.devicePixelRatio || 1
-  
-  canvas.width = img.width * Math.min(dpr, 2)
-  canvas.height = img.height * Math.min(dpr, 2)
-  
-  canvas.style.width = `${displayWidth}px`
-  canvas.style.height = `${displayHeight}px`
+  const scaleX = containerWidth / img.width;
+  const scaleY = containerHeight / img.height;
+  const displayScale = Math.min(scaleX, scaleY, 1);
+  canvasScale.value = displayScale;
 
-  redrawCanvas()
+  const displayWidth = Math.floor(img.width * displayScale);
+  const displayHeight = Math.floor(img.height * displayScale);
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = img.width * Math.min(dpr, 2);
+  canvas.height = img.height * Math.min(dpr, 2);
+
+  canvas.style.width = `${displayWidth}px`;
+  canvas.style.height = `${displayHeight}px`;
+
+  redrawCanvas();
 }
 
 function redrawCanvas() {
-  const canvas = canvasRef.value
-  const ctx = canvas?.getContext('2d')
-  const img = imageElement.value
+  const canvas = canvasRef.value;
+  const ctx = canvas?.getContext('2d');
+  const img = imageElement.value;
 
-  if (!canvas || !ctx || !img) return
+  if (!canvas || !ctx || !img) return;
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  const internalScale = canvas.width / img.width
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const internalScale = canvas.width / img.width;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
   // Draw occlusions
   localOcclusions.value.forEach((occ, index) => {
-    const x = occ.x * internalScale
-    const y = occ.y * internalScale
-    const width = occ.width * internalScale
-    const height = occ.height * internalScale
-    const isSelected = selectedOcclusionId.value === occ.id
-    const color = occ.label || '#EF4444'
+    const x = occ.x * internalScale;
+    const y = occ.y * internalScale;
+    const width = occ.width * internalScale;
+    const height = occ.height * internalScale;
+    const isSelected = selectedOcclusionId.value === occ.id;
+    const color = occ.label || '#EF4444';
 
-    ctx.fillStyle = color
-    ctx.fillRect(x, y, width, height)
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, width, height);
 
-    ctx.strokeStyle = isSelected ? 'white' : 'rgba(0,0,0,0.3)'
-    ctx.lineWidth = isSelected ? 3 * dpr : 1 * dpr
-    ctx.strokeRect(x, y, width, height)
+    ctx.strokeStyle = isSelected ? 'white' : 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = isSelected ? 3 * dpr : 1 * dpr;
+    ctx.strokeRect(x, y, width, height);
 
-    ctx.fillStyle = 'white'
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-    ctx.lineWidth = 2 * dpr
-    const fontSize = Math.max(16 * dpr, Math.min(width, height) * 0.4)
-    ctx.font = `bold ${fontSize}px sans-serif`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.strokeText(`${index + 1}`, x + width / 2, y + height / 2)
-    ctx.fillText(`${index + 1}`, x + width / 2, y + height / 2)
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 2 * dpr;
+    const fontSize = Math.max(16 * dpr, Math.min(width, height) * 0.4);
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeText(`${index + 1}`, x + width / 2, y + height / 2);
+    ctx.fillText(`${index + 1}`, x + width / 2, y + height / 2);
 
     if (isSelected) {
-      drawResizeHandles(ctx, x, y, width, height, dpr)
+      drawResizeHandles(ctx, x, y, width, height, dpr);
     }
-  })
+  });
 
   // Draw current drawing rectangle
   if (currentRect.value && interactionMode.value === 'draw') {
-    const x = currentRect.value.x * internalScale
-    const y = currentRect.value.y * internalScale
-    const width = currentRect.value.width * internalScale
-    const height = currentRect.value.height * internalScale
-    
-    ctx.fillStyle = occlusionColor.value
-    ctx.globalAlpha = 0.7
-    ctx.fillRect(x, y, width, height)
-    ctx.globalAlpha = 1
-    ctx.strokeStyle = 'white'
-    ctx.lineWidth = 2 * dpr
-    ctx.setLineDash([5 * dpr, 5 * dpr])
-    ctx.strokeRect(x, y, width, height)
-    ctx.setLineDash([])
+    const x = currentRect.value.x * internalScale;
+    const y = currentRect.value.y * internalScale;
+    const width = currentRect.value.width * internalScale;
+    const height = currentRect.value.height * internalScale;
+
+    ctx.fillStyle = occlusionColor.value;
+    ctx.globalAlpha = 0.7;
+    ctx.fillRect(x, y, width, height);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2 * dpr;
+    ctx.setLineDash([5 * dpr, 5 * dpr]);
+    ctx.strokeRect(x, y, width, height);
+    ctx.setLineDash([]);
   }
 }
 
@@ -235,12 +235,12 @@ function drawResizeHandles(
   dpr: number
 ) {
   // Larger handles for touch
-  const handleSize = 14 * dpr
-  const halfHandle = handleSize / 2
-  
-  ctx.fillStyle = 'white'
-  ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-  ctx.lineWidth = 2 * dpr
+  const handleSize = 14 * dpr;
+  const halfHandle = handleSize / 2;
+
+  ctx.fillStyle = 'white';
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 2 * dpr;
 
   const handles = [
     { x: x - halfHandle, y: y - halfHandle },
@@ -250,21 +250,21 @@ function drawResizeHandles(
     { x: x + width - halfHandle, y: y + height - halfHandle },
     { x: x + width / 2 - halfHandle, y: y + height - halfHandle },
     { x: x - halfHandle, y: y + height - halfHandle },
-    { x: x - halfHandle, y: y + height / 2 - halfHandle },
-  ]
+    { x: x - halfHandle, y: y + height / 2 - halfHandle }
+  ];
 
   handles.forEach(handle => {
-    ctx.beginPath()
-    ctx.arc(handle.x + halfHandle, handle.y + halfHandle, halfHandle, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.stroke()
-  })
+    ctx.beginPath();
+    ctx.arc(handle.x + halfHandle, handle.y + halfHandle, halfHandle, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
 }
 
 function getHandleAtPosition(x: number, y: number, occ: ImageOcclusion): ResizeHandle {
   // Much larger hit area for touch (30px)
-  const hitSize = 30
-  const halfHit = hitSize / 2
+  const hitSize = 30;
+  const halfHit = hitSize / 2;
 
   const handles: { pos: { x: number; y: number }; handle: ResizeHandle }[] = [
     { pos: { x: occ.x, y: occ.y }, handle: 'nw' },
@@ -274,8 +274,8 @@ function getHandleAtPosition(x: number, y: number, occ: ImageOcclusion): ResizeH
     { pos: { x: occ.x + occ.width, y: occ.y + occ.height }, handle: 'se' },
     { pos: { x: occ.x + occ.width / 2, y: occ.y + occ.height }, handle: 's' },
     { pos: { x: occ.x, y: occ.y + occ.height }, handle: 'sw' },
-    { pos: { x: occ.x, y: occ.y + occ.height / 2 }, handle: 'w' },
-  ]
+    { pos: { x: occ.x, y: occ.y + occ.height / 2 }, handle: 'w' }
+  ];
 
   for (const { pos, handle } of handles) {
     if (
@@ -284,104 +284,104 @@ function getHandleAtPosition(x: number, y: number, occ: ImageOcclusion): ResizeH
       y >= pos.y - halfHit &&
       y <= pos.y + halfHit
     ) {
-      return handle
+      return handle;
     }
   }
 
-  return null
+  return null;
 }
 
 function getCanvasCoordinates(event: MouseEvent | Touch): { x: number; y: number } {
-  const canvas = canvasRef.value
-  if (!canvas) return { x: 0, y: 0 }
+  const canvas = canvasRef.value;
+  if (!canvas) return { x: 0, y: 0 };
 
-  const rect = canvas.getBoundingClientRect()
-  const clientX = event.clientX
-  const clientY = event.clientY
+  const rect = canvas.getBoundingClientRect();
+  const clientX = event.clientX;
+  const clientY = event.clientY;
 
-  const x = (clientX - rect.left) / (canvasScale.value * zoom.value)
-  const y = (clientY - rect.top) / (canvasScale.value * zoom.value)
+  const x = (clientX - rect.left) / (canvasScale.value * zoom.value);
+  const y = (clientY - rect.top) / (canvasScale.value * zoom.value);
 
-  return { x, y }
+  return { x, y };
 }
 
 function getPinchDistance(touches: TouchList): number {
-  const touch1 = touches[0]!
-  const touch2 = touches[1]!
-  const dx = touch2.clientX - touch1.clientX
-  const dy = touch2.clientY - touch1.clientY
-  return Math.sqrt(dx * dx + dy * dy)
+  const touch1 = touches[0]!;
+  const touch2 = touches[1]!;
+  const dx = touch2.clientX - touch1.clientX;
+  const dy = touch2.clientY - touch1.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 function generateId(): string {
-  return `occ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return `occ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 // Mouse event handlers
 function handleMouseDown(event: MouseEvent) {
-  if (!imageLoaded.value) return
-  handlePointerDown(getCanvasCoordinates(event))
+  if (!imageLoaded.value) return;
+  handlePointerDown(getCanvasCoordinates(event));
 }
 
 function handleMouseMove(event: MouseEvent) {
-  if (!isInteracting.value || !startPoint.value) return
-  handlePointerMove(getCanvasCoordinates(event))
+  if (!isInteracting.value || !startPoint.value) return;
+  handlePointerMove(getCanvasCoordinates(event));
 }
 
 function handleMouseUp() {
-  handlePointerUp()
+  handlePointerUp();
 }
 
 // Touch event handlers with pinch detection
 function handleTouchStart(event: TouchEvent) {
-  if (!imageLoaded.value) return
-  event.preventDefault()
+  if (!imageLoaded.value) return;
+  event.preventDefault();
 
   // Two finger touch = pinch zoom
   if (event.touches.length === 2) {
-    isTouchInteracting.value = false
-    isInteracting.value = false
-    initialPinchDistance.value = getPinchDistance(event.touches)
-    initialPinchZoom.value = zoom.value
-    return
+    isTouchInteracting.value = false;
+    isInteracting.value = false;
+    initialPinchDistance.value = getPinchDistance(event.touches);
+    initialPinchZoom.value = zoom.value;
+    return;
   }
 
   // Single finger touch = interact
   if (event.touches.length === 1) {
-    isTouchInteracting.value = true
-    handlePointerDown(getCanvasCoordinates(event.touches[0]!))
+    isTouchInteracting.value = true;
+    handlePointerDown(getCanvasCoordinates(event.touches[0]!));
   }
 }
 
 function handleTouchMove(event: TouchEvent) {
-  event.preventDefault()
+  event.preventDefault();
 
   // Two finger = pinch zoom
   if (event.touches.length === 2 && initialPinchDistance.value !== null) {
-    const currentDistance = getPinchDistance(event.touches)
-    const scale = currentDistance / initialPinchDistance.value
-    zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.value * scale))
-    return
+    const currentDistance = getPinchDistance(event.touches);
+    const scale = currentDistance / initialPinchDistance.value;
+    zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.value * scale));
+    return;
   }
 
   // Single finger = interact
   if (event.touches.length === 1 && isTouchInteracting.value && isInteracting.value) {
-    handlePointerMove(getCanvasCoordinates(event.touches[0]!))
+    handlePointerMove(getCanvasCoordinates(event.touches[0]!));
   }
 }
 
 function handleTouchEnd(event: TouchEvent) {
-  event.preventDefault()
+  event.preventDefault();
 
   // Reset pinch state
   if (initialPinchDistance.value !== null) {
-    initialPinchDistance.value = null
-    return
+    initialPinchDistance.value = null;
+    return;
   }
 
   if (isTouchInteracting.value) {
-    handlePointerUp()
-    isTouchInteracting.value = false
+    handlePointerUp();
+    isTouchInteracting.value = false;
   }
 }
 
@@ -389,16 +389,16 @@ function handleTouchEnd(event: TouchEvent) {
 function handlePointerDown(coords: { x: number; y: number }) {
   // Check if clicking on a resize handle of selected occlusion
   if (selectedOcclusionId.value) {
-    const selectedOcc = localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
+    const selectedOcc = localOcclusions.value.find(o => o.id === selectedOcclusionId.value);
     if (selectedOcc) {
-      const handle = getHandleAtPosition(coords.x, coords.y, selectedOcc)
+      const handle = getHandleAtPosition(coords.x, coords.y, selectedOcc);
       if (handle) {
-        interactionMode.value = 'resize'
-        isInteracting.value = true
-        activeHandle.value = handle
-        startPoint.value = coords
-        resizeStartRect.value = { ...selectedOcc }
-        return
+        interactionMode.value = 'resize';
+        isInteracting.value = true;
+        activeHandle.value = handle;
+        startPoint.value = coords;
+        resizeStartRect.value = { ...selectedOcc };
+        return;
       }
     }
   }
@@ -409,133 +409,133 @@ function handlePointerDown(coords: { x: number; y: number }) {
     coords.x <= occ.x + occ.width &&
     coords.y >= occ.y &&
     coords.y <= occ.y + occ.height
-  )
+  );
 
   if (clickedOcclusion) {
     if (selectedOcclusionId.value === clickedOcclusion.id) {
       // Already selected, start moving
-      interactionMode.value = 'move'
-      isInteracting.value = true
-      startPoint.value = coords
-      moveStartOcclusion.value = { ...clickedOcclusion }
+      interactionMode.value = 'move';
+      isInteracting.value = true;
+      startPoint.value = coords;
+      moveStartOcclusion.value = { ...clickedOcclusion };
     } else {
       // Select it
-      selectedOcclusionId.value = clickedOcclusion.id
-      redrawCanvas()
+      selectedOcclusionId.value = clickedOcclusion.id;
+      redrawCanvas();
     }
-    return
+    return;
   }
 
   // Start drawing new rectangle
-  selectedOcclusionId.value = null
-  interactionMode.value = 'draw'
-  isInteracting.value = true
-  startPoint.value = coords
-  currentRect.value = { x: coords.x, y: coords.y, width: 0, height: 0 }
+  selectedOcclusionId.value = null;
+  interactionMode.value = 'draw';
+  isInteracting.value = true;
+  startPoint.value = coords;
+  currentRect.value = { x: coords.x, y: coords.y, width: 0, height: 0 };
 }
 
 function handlePointerMove(coords: { x: number; y: number }) {
-  if (!startPoint.value) return
+  if (!startPoint.value) return;
 
   if (interactionMode.value === 'resize' && activeHandle.value && resizeStartRect.value) {
-    const dx = coords.x - startPoint.value.x
-    const dy = coords.y - startPoint.value.y
-    const occ = localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
-    
+    const dx = coords.x - startPoint.value.x;
+    const dy = coords.y - startPoint.value.y;
+    const occ = localOcclusions.value.find(o => o.id === selectedOcclusionId.value);
+
     if (occ) {
-      const original = resizeStartRect.value
-      
+      const original = resizeStartRect.value;
+
       switch (activeHandle.value) {
         case 'nw':
-          occ.x = original.x + dx
-          occ.y = original.y + dy
-          occ.width = original.width - dx
-          occ.height = original.height - dy
-          break
+          occ.x = original.x + dx;
+          occ.y = original.y + dy;
+          occ.width = original.width - dx;
+          occ.height = original.height - dy;
+          break;
         case 'n':
-          occ.y = original.y + dy
-          occ.height = original.height - dy
-          break
+          occ.y = original.y + dy;
+          occ.height = original.height - dy;
+          break;
         case 'ne':
-          occ.y = original.y + dy
-          occ.width = original.width + dx
-          occ.height = original.height - dy
-          break
+          occ.y = original.y + dy;
+          occ.width = original.width + dx;
+          occ.height = original.height - dy;
+          break;
         case 'e':
-          occ.width = original.width + dx
-          break
+          occ.width = original.width + dx;
+          break;
         case 'se':
-          occ.width = original.width + dx
-          occ.height = original.height + dy
-          break
+          occ.width = original.width + dx;
+          occ.height = original.height + dy;
+          break;
         case 's':
-          occ.height = original.height + dy
-          break
+          occ.height = original.height + dy;
+          break;
         case 'sw':
-          occ.x = original.x + dx
-          occ.width = original.width - dx
-          occ.height = original.height + dy
-          break
+          occ.x = original.x + dx;
+          occ.width = original.width - dx;
+          occ.height = original.height + dy;
+          break;
         case 'w':
-          occ.x = original.x + dx
-          occ.width = original.width - dx
-          break
+          occ.x = original.x + dx;
+          occ.width = original.width - dx;
+          break;
       }
 
-      if (occ.width < 20) occ.width = 20
-      if (occ.height < 20) occ.height = 20
+      if (occ.width < 20) occ.width = 20;
+      if (occ.height < 20) occ.height = 20;
 
-      redrawCanvas()
+      redrawCanvas();
     }
-    return
+    return;
   }
 
   if (interactionMode.value === 'move' && moveStartOcclusion.value) {
-    const dx = coords.x - startPoint.value.x
-    const dy = coords.y - startPoint.value.y
-    const occ = localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
-    
+    const dx = coords.x - startPoint.value.x;
+    const dy = coords.y - startPoint.value.y;
+    const occ = localOcclusions.value.find(o => o.id === selectedOcclusionId.value);
+
     if (occ) {
-      occ.x = moveStartOcclusion.value.x + dx
-      occ.y = moveStartOcclusion.value.y + dy
-      redrawCanvas()
+      occ.x = moveStartOcclusion.value.x + dx;
+      occ.y = moveStartOcclusion.value.y + dy;
+      redrawCanvas();
     }
-    return
+    return;
   }
 
   if (interactionMode.value === 'draw') {
-    const x = Math.min(startPoint.value.x, coords.x)
-    const y = Math.min(startPoint.value.y, coords.y)
-    const width = Math.abs(coords.x - startPoint.value.x)
-    const height = Math.abs(coords.y - startPoint.value.y)
+    const x = Math.min(startPoint.value.x, coords.x);
+    const y = Math.min(startPoint.value.y, coords.y);
+    const width = Math.abs(coords.x - startPoint.value.x);
+    const height = Math.abs(coords.y - startPoint.value.y);
 
-    currentRect.value = { x, y, width, height }
-    redrawCanvas()
+    currentRect.value = { x, y, width, height };
+    redrawCanvas();
   }
 }
 
 function handlePointerUp() {
   if (interactionMode.value === 'resize') {
-    commitToHistory()
-    isInteracting.value = false
-    activeHandle.value = null
-    resizeStartRect.value = null
-    startPoint.value = null
-    interactionMode.value = 'none'
-    return
+    commitToHistory();
+    isInteracting.value = false;
+    activeHandle.value = null;
+    resizeStartRect.value = null;
+    startPoint.value = null;
+    interactionMode.value = 'none';
+    return;
   }
 
   if (interactionMode.value === 'move') {
-    commitToHistory()
-    isInteracting.value = false
-    moveStartOcclusion.value = null
-    startPoint.value = null
-    interactionMode.value = 'none'
-    return
+    commitToHistory();
+    isInteracting.value = false;
+    moveStartOcclusion.value = null;
+    startPoint.value = null;
+    interactionMode.value = 'none';
+    return;
   }
 
   if (interactionMode.value === 'draw' && currentRect.value) {
-    const minSize = 20
+    const minSize = 20;
     if (currentRect.value.width > minSize && currentRect.value.height > minSize) {
       const newOcclusion: ImageOcclusion = {
         id: generateId(),
@@ -543,97 +543,97 @@ function handlePointerUp() {
         y: currentRect.value.y,
         width: currentRect.value.width,
         height: currentRect.value.height,
-        label: occlusionColor.value,
-      }
-      localOcclusions.value.push(newOcclusion)
-      selectedOcclusionId.value = newOcclusion.id
-      commitToHistory()
+        label: occlusionColor.value
+      };
+      localOcclusions.value.push(newOcclusion);
+      selectedOcclusionId.value = newOcclusion.id;
+      commitToHistory();
     }
   }
 
-  isInteracting.value = false
-  startPoint.value = null
-  currentRect.value = null
-  interactionMode.value = 'none'
-  redrawCanvas()
+  isInteracting.value = false;
+  startPoint.value = null;
+  currentRect.value = null;
+  interactionMode.value = 'none';
+  redrawCanvas();
 }
 
 function deleteSelectedOcclusion() {
-  if (!selectedOcclusionId.value) return
-  localOcclusions.value = localOcclusions.value.filter(o => o.id !== selectedOcclusionId.value)
-  selectedOcclusionId.value = null
-  commitToHistory()
-  redrawCanvas()
+  if (!selectedOcclusionId.value) return;
+  localOcclusions.value = localOcclusions.value.filter(o => o.id !== selectedOcclusionId.value);
+  selectedOcclusionId.value = null;
+  commitToHistory();
+  redrawCanvas();
 }
 
 function clearAllOcclusions() {
-  localOcclusions.value = []
-  selectedOcclusionId.value = null
-  commitToHistory()
-  redrawCanvas()
+  localOcclusions.value = [];
+  selectedOcclusionId.value = null;
+  commitToHistory();
+  redrawCanvas();
 }
 
 function handleSave() {
-  emit('save', localOcclusions.value)
-  emit('update:open', false)
+  emit('save', localOcclusions.value);
+  emit('update:open', false);
 }
 
 function handleCancel() {
-  emit('cancel')
-  emit('update:open', false)
+  emit('cancel');
+  emit('update:open', false);
 }
 
 function zoomIn() {
-  zoom.value = Math.min(MAX_ZOOM, zoom.value + 0.25)
+  zoom.value = Math.min(MAX_ZOOM, zoom.value + 0.25);
 }
 
 function zoomOut() {
-  zoom.value = Math.max(MIN_ZOOM, zoom.value - 0.25)
+  zoom.value = Math.max(MIN_ZOOM, zoom.value - 0.25);
 }
 
 function resetZoom() {
-  zoom.value = 1
+  zoom.value = 1;
 }
 
 function handleWheel(event: WheelEvent) {
-  if (!event.ctrlKey && !event.metaKey) return
-  event.preventDefault()
-  
-  const delta = event.deltaY > 0 ? -0.1 : 0.1
-  zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom.value + delta))
+  if (!event.ctrlKey && !event.metaKey) return;
+  event.preventDefault();
+
+  const delta = event.deltaY > 0 ? -0.1 : 0.1;
+  zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom.value + delta));
 }
 
 function handleResize() {
   if (imageLoaded.value) {
-    setupCanvas()
+    setupCanvas();
   }
 }
 
 // Watch color changes to update selected occlusion
 watch(occlusionColor, (newColor) => {
   if (selectedOcclusionId.value) {
-    const occ = localOcclusions.value.find(o => o.id === selectedOcclusionId.value)
+    const occ = localOcclusions.value.find(o => o.id === selectedOcclusionId.value);
     if (occ) {
-      occ.label = newColor
-      commitToHistory()
-      redrawCanvas()
+      occ.label = newColor;
+      commitToHistory();
+      redrawCanvas();
     }
   }
-})
+});
 
 watch(zoom, () => {
-  redrawCanvas()
-})
+  redrawCanvas();
+});
 
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown)
-  window.addEventListener('resize', handleResize)
-})
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('resize', handleResize);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-  window.removeEventListener('resize', handleResize)
-})
+  window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('resize', handleResize);
+});
 </script>
 
 <template>

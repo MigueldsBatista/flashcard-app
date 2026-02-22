@@ -1,31 +1,34 @@
 <script setup lang="ts">
-import { Check } from 'lucide-vue-next'
+import { Check } from 'lucide-vue-next';
 
 interface Props {
-  modelValue?: boolean
-  disabled?: boolean
-  label?: string
+  modelValue?: boolean;
+  disabled?: boolean;
+  label?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
   disabled: false,
-  label: '',
-})
+  label: ''
+});
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+  'update:modelValue': [value: boolean];
+}>();
 
 function toggle() {
   if (!props.disabled) {
-    emit('update:modelValue', !props.modelValue)
+    emit('update:modelValue', !props.modelValue);
   }
 }
 </script>
 
 <template>
-  <div class="flex items-center gap-2 cursor-pointer" @click="toggle">
+  <div
+    class="flex items-center gap-2 cursor-pointer"
+    @click="toggle"
+  >
     <div
       role="checkbox"
       :aria-checked="modelValue"
@@ -35,9 +38,15 @@ function toggle() {
         disabled && 'opacity-50 cursor-not-allowed',
       ]"
     >
-      <Check v-if="modelValue" class="h-3.5 w-3.5 font-bold" />
+      <Check
+        v-if="modelValue"
+        class="h-3.5 w-3.5 font-bold"
+      />
     </div>
-    <label v-if="label" class="text-sm font-medium leading-none cursor-pointer select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+    <label
+      v-if="label"
+      class="text-sm font-medium leading-none cursor-pointer select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+    >
       {{ label }}
     </label>
   </div>

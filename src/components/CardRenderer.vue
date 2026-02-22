@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import type { Card } from '@/types/flashcard'
-import hljs from 'highlight.js'
-import 'highlight.js/styles/atom-one-dark.css'
-import katex from 'katex'
-import 'katex/dist/katex.min.css'
-import MarkdownIt from 'markdown-it'
-import { computed } from 'vue'
-import OcclusionCardViewer from './OcclusionCardViewer.vue'
+import type { Card } from '@/types/flashcard';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-dark.css';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import MarkdownIt from 'markdown-it';
+import { computed } from 'vue';
+import OcclusionCardViewer from './OcclusionCardViewer.vue';
 
 interface Props {
-  card: Card
-  showAnswer: boolean
+  card: Card;
+  showAnswer: boolean;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const md = new MarkdownIt({
   html: false,
@@ -22,28 +22,28 @@ const md = new MarkdownIt({
   highlight: (str: string, lang: string) => {
     if (lang && hljs.getLanguage(lang)) {
       try {
-        return hljs.highlight(str, { language: lang }).value
+        return hljs.highlight(str, { language: lang }).value;
       } catch (_) {}
     }
-    return ''
-  },
-})
+    return '';
+  }
+});
 
 const renderLatexContent = (content: string): string => {
-  const regex = /(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g
-  
+  const regex = /(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g;
+
   return content.split(regex).map(part => {
     if (part.startsWith('$$') && part.endsWith('$$')) {
       try {
-        return katex.renderToString(part.slice(2, -2), { displayMode: true, throwOnError: false })
+        return katex.renderToString(part.slice(2, -2), { displayMode: true, throwOnError: false });
       } catch {
-        return part
+        return part;
       }
     } else if (part.startsWith('$') && part.endsWith('$')) {
       try {
-        return katex.renderToString(part.slice(1, -1), { displayMode: false, throwOnError: false })
+        return katex.renderToString(part.slice(1, -1), { displayMode: false, throwOnError: false });
       } catch {
-        return part
+        return part;
       }
     } else {
       return part
@@ -52,57 +52,57 @@ const renderLatexContent = (content: string): string => {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;')
-        .replace(/\n/g, '<br>')
+        .replace(/\n/g, '<br>');
     }
-  }).join('')
-}
+  }).join('');
+};
 
-const isOcclusion = computed(() => props.card.content.type === 'occlusion')
+const isOcclusion = computed(() => props.card.content.type === 'occlusion');
 
 const renderedFront = computed(() => {
   if (props.card.content.type === 'text') {
-    return md.render(props.card.content.front)
+    return md.render(props.card.content.front);
   }
-  return props.card.content.front
-})
+  return props.card.content.front;
+});
 
 const renderedBack = computed(() => {
-  const content = props.card.content
-  
+  const content = props.card.content;
+
   switch (content.type) {
     case 'text':
-      return md.render(content.back)
-    
+      return md.render(content.back);
+
     case 'code':
-      const lang = content.language || 'javascript'
+      const lang = content.language || 'javascript';
       try {
-        const highlighted = hljs.highlight(content.back, { language: lang }).value
-        return `<pre class="hljs rounded-lg p-4 overflow-x-auto"><code>${highlighted}</code></pre>`
+        const highlighted = hljs.highlight(content.back, { language: lang }).value;
+        return `<pre class="hljs rounded-lg p-4 overflow-x-auto"><code>${highlighted}</code></pre>`;
       } catch (_) {
-        return `<pre class="bg-muted rounded-lg p-4 overflow-x-auto"><code>${content.back}</code></pre>`
+        return `<pre class="bg-muted rounded-lg p-4 overflow-x-auto"><code>${content.back}</code></pre>`;
       }
-    
+
     case 'latex':
       try {
-        const rendered = renderLatexContent(content.back)
-        return `<div class="p-4 bg-card rounded-lg text-left w-full">${rendered}</div>`
+        const rendered = renderLatexContent(content.back);
+        return `<div class="p-4 bg-card rounded-lg text-left w-full">${rendered}</div>`;
       } catch (error) {
         return `<div class="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
           <p class="text-destructive text-sm">Erro ao renderizar LaTeX</p>
           <pre class="mt-2 text-xs font-mono text-muted-foreground">${content.back}</pre>
-        </div>`
+        </div>`;
       }
-    
+
     case 'image':
-      return content.back
-    
+      return content.back;
+
     case 'occlusion':
-      return '' // Handled separately
-    
+      return ''; // Handled separately
+
     default:
-      return content.back
+      return content.back;
   }
-})
+});
 </script>
 
 <template>
@@ -135,8 +135,17 @@ const renderedBack = computed(() => {
           Pergunta
         </div>
         <div class="bg-muted/50 rounded-lg p-4">
-          <div v-if="card.content.type === 'text'" class="prose dark:prose-invert" v-html="renderedFront" />
-          <p v-else class="text-foreground">{{ card.content.front }}</p>
+          <div
+            v-if="card.content.type === 'text'"
+            class="prose dark:prose-invert"
+            v-html="renderedFront"
+          />
+          <p
+            v-else
+            class="text-foreground"
+          >
+            {{ card.content.front }}
+          </p>
         </div>
       </div>
 
@@ -149,20 +158,26 @@ const renderedBack = computed(() => {
           <!-- Image type -->
           <template v-if="card.content.type === 'image'">
             <div class="space-y-3">
-              <div v-if="card.content.imageUrl" class="rounded-lg overflow-hidden border border-border">
+              <div
+                v-if="card.content.imageUrl"
+                class="rounded-lg overflow-hidden border border-border"
+              >
                 <img
                   :src="card.content.imageUrl"
                   alt="Card content"
                   class="w-full max-h-96 object-contain bg-muted"
-                />
+                >
               </div>
               <p class="text-foreground">{{ card.content.back }}</p>
             </div>
           </template>
-          
+
           <!-- Other types with HTML rendering -->
           <template v-else>
-            <div class="prose dark:prose-invert max-w-none" v-html="renderedBack" />
+            <div
+              class="prose dark:prose-invert max-w-none"
+              v-html="renderedBack"
+            />
           </template>
         </div>
       </div>

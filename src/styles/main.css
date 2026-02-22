@@ -239,8 +239,3 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
-/* KaTeX overrides for dark mode */
-.dark .katex {
-  color: #f8fafc;
-}

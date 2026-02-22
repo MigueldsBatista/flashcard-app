@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { useNotifications, type NotificationType } from '@/composables/useNotifications'
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-vue-next'
+import { useNotifications, type NotificationType } from '@/composables/useNotifications';
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-vue-next';
 
-const { notifications, dismiss } = useNotifications()
+const { notifications, dismiss } = useNotifications();
 
 function getIcon(type: NotificationType) {
   switch (type) {
-    case 'success': return CheckCircle2
-    case 'error': return XCircle
-    case 'warning': return AlertTriangle
-    default: return Info
+    case 'success': return CheckCircle2;
+    case 'error': return XCircle;
+    case 'warning': return AlertTriangle;
+    default: return Info;
   }
 }
 
 function getStyles(type: NotificationType) {
   switch (type) {
     case 'success':
-      return 'bg-success text-white'
+      return 'bg-success text-white';
     case 'error':
-      return 'bg-destructive text-white'
+      return 'bg-destructive text-white';
     case 'warning':
-      return 'bg-warning text-white'
+      return 'bg-warning text-white';
     default:
-      return 'bg-card text-foreground border border-border'
+      return 'bg-card text-foreground border border-border';
   }
 }
 </script>

@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
-import Dialog from '@/components/ui/Dialog.vue'
-import LoadingState from '@/components/ui/LoadingState.vue'
-import { useDeckIcons } from '@/composables/useDeckIcons'
-import { useFlashcardStore } from '@/stores/flashcard'
-import type { Deck } from '@/types/flashcard'
-import { ChevronDown, ChevronRight, Edit, FolderOpen, FolderPlus, Trash2 } from 'lucide-vue-next'
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import Button from '@/components/ui/Button.vue';
+import Card from '@/components/ui/Card.vue';
+import Dialog from '@/components/ui/Dialog.vue';
+import LoadingState from '@/components/ui/LoadingState.vue';
+import { useDeckIcons } from '@/composables/useDeckIcons';
+import { useFlashcardStore } from '@/stores/flashcard';
+import type { Deck } from '@/types/flashcard';
+import { ChevronDown, ChevronRight, Edit, FolderOpen, FolderPlus, Trash2 } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
-const store = useFlashcardStore()
-const { icons, getIconComponent } = useDeckIcons()
+const router = useRouter();
+const store = useFlashcardStore();
+const { icons, getIconComponent } = useDeckIcons();
 
-const isCreating = ref(false)
-const editingDeck = ref<Deck | null>(null)
-const newDeckName = ref('')
-const newDeckDescription = ref('')
-const newDeckColor = ref('#3B82F6')
-const newDeckIcon = ref('BookOpen')
-const showIconPicker = ref(false)
+const isCreating = ref(false);
+const editingDeck = ref<Deck | null>(null);
+const newDeckName = ref('');
+const newDeckDescription = ref('');
+const newDeckColor = ref('#3B82F6');
+const newDeckIcon = ref('BookOpen');
+const showIconPicker = ref(false);
 
 const colorOptions = [
   { name: 'Azul', value: '#3B82F6' },
@@ -28,70 +28,69 @@ const colorOptions = [
   { name: 'Roxo', value: '#8B5CF6' },
   { name: 'Rosa', value: '#EC4899' },
   { name: 'Laranja', value: '#F59E0B' },
-  { name: 'Vermelho', value: '#EF4444' },
-]
+  { name: 'Vermelho', value: '#EF4444' }
+];
 
 function handleCreateDeck() {
-  if (!newDeckName.value.trim()) return
+  if (!newDeckName.value.trim()) return;
 
   store.addDeck({
     name: newDeckName.value,
     description: newDeckDescription.value,
     color: newDeckColor.value,
-    icon: newDeckIcon.value,
-  })
+    icon: newDeckIcon.value
+  });
 
-  resetForm()
-  isCreating.value = false
+  resetForm();
+  isCreating.value = false;
 }
 
 function handleUpdateDeck() {
-  if (!editingDeck.value || !newDeckName.value.trim()) return
+  if (!editingDeck.value || !newDeckName.value.trim()) return;
 
   store.updateDeck(editingDeck.value.id, {
     name: newDeckName.value,
     description: newDeckDescription.value,
     color: newDeckColor.value,
-    icon: newDeckIcon.value,
-  })
+    icon: newDeckIcon.value
+  });
 
-  resetForm()
-  editingDeck.value = null
+  resetForm();
+  editingDeck.value = null;
 }
 
 function handleEditDeck(deck: Deck) {
-  editingDeck.value = deck
-  newDeckName.value = deck.name
-  newDeckDescription.value = deck.description || ''
-  newDeckColor.value = deck.color || '#3B82F6'
-  newDeckIcon.value = deck.icon || 'BookOpen'
+  editingDeck.value = deck;
+  newDeckName.value = deck.name;
+  newDeckDescription.value = deck.description || '';
+  newDeckColor.value = deck.color || '#3B82F6';
+  newDeckIcon.value = deck.icon || 'BookOpen';
 }
 
 function resetForm() {
-  newDeckName.value = ''
-  newDeckDescription.value = ''
-  newDeckColor.value = '#3B82F6'
-  newDeckIcon.value = 'BookOpen'
-  showIconPicker.value = false
+  newDeckName.value = '';
+  newDeckDescription.value = '';
+  newDeckColor.value = '#3B82F6';
+  newDeckIcon.value = 'BookOpen';
+  showIconPicker.value = false;
 }
 
 function getCardCount(deckId: string): number {
-  return store.cards.filter(card => card.deckId === deckId).length
+  return store.cards.filter(card => card.deckId === deckId).length;
 }
 
 function getDueCardCount(deckId: string): number {
-  const now = new Date()
+  const now = new Date();
   return store.cards.filter(
     card => card.deckId === deckId && new Date(card.nextReview) <= now
-  ).length
+  ).length;
 }
 
 function handleDeleteDeck(deck: Deck) {
   if (confirm(`Tem certeza que deseja excluir "${deck.name}"?`)) {
-    store.deleteDeck(deck.id)
+    store.deleteDeck(deck.id);
   }
 }
-
 </script>
 
 <template>
@@ -107,10 +106,10 @@ function handleDeleteDeck(deck: Deck) {
             {{ store.decks.length }} {{ store.decks.length === 1 ? 'baralho' : 'baralhos' }}
           </p>
         </div>
-        
+
         <!-- Desktop Create Button -->
         <div class="hidden md:block">
-          <Button 
+          <Button
             class="flex items-center gap-2 px-6 shadow-md"
             @click="isCreating = true"
           >
@@ -121,8 +120,8 @@ function handleDeleteDeck(deck: Deck) {
       </div>
 
       <!-- Create/Edit Dialog -->
-      <Dialog 
-        :open="isCreating || editingDeck !== null" 
+      <Dialog
+        :open="isCreating || editingDeck !== null"
         @update:open="(v) => { if (!v) { isCreating = false; editingDeck = null; resetForm() } }"
       >
         <template #default="{ close }">
@@ -140,7 +139,7 @@ function handleDeleteDeck(deck: Deck) {
                 type="text"
                 placeholder="Nome do baralho"
                 class="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              >
             </div>
 
             <div>
@@ -185,9 +184,15 @@ function handleDeleteDeck(deck: Deck) {
                   class="flex items-center gap-2 px-3 py-2 border border-border rounded-lg bg-muted/30 hover:bg-muted transition-colors"
                   @click="showIconPicker = !showIconPicker"
                 >
-                  <component :is="getIconComponent(newDeckIcon)" class="w-5 h-5 text-foreground" />
+                  <component
+                    :is="getIconComponent(newDeckIcon)"
+                    class="w-5 h-5 text-foreground"
+                  />
                   <span class="text-sm text-muted-foreground">{{ icons.find(i => i.name === newDeckIcon)?.label || 'Livro' }}</span>
-                  <ChevronDown class="w-4 h-4 text-muted-foreground transition-transform" :class="showIconPicker ? 'rotate-180' : ''" />
+                  <ChevronDown
+                    class="w-4 h-4 text-muted-foreground transition-transform"
+                    :class="showIconPicker ? 'rotate-180' : ''"
+                  />
                 </button>
               </div>
               <!-- Expanded: icon grid -->
@@ -208,13 +213,20 @@ function handleDeleteDeck(deck: Deck) {
                   :title="icon.label"
                   @click="newDeckIcon = icon.name; showIconPicker = false"
                 >
-                  <component :is="icon.component" class="w-4.5 h-4.5" />
+                  <component
+                    :is="icon.component"
+                    class="w-4.5 h-4.5"
+                  />
                 </button>
               </div>
             </div>
 
             <div class="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-              <Button variant="outline" class="sm:flex-none" @click="close(); resetForm()">
+              <Button
+                variant="outline"
+                class="sm:flex-none"
+                @click="close(); resetForm()"
+              >
                 Cancelar
               </Button>
               <Button
@@ -264,7 +276,10 @@ function handleDeleteDeck(deck: Deck) {
                   class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                   :style="{ backgroundColor: deck.color }"
                 >
-                  <component :is="getIconComponent(deck.icon)" class="w-6 h-6 text-white" />
+                  <component
+                    :is="getIconComponent(deck.icon)"
+                    class="w-6 h-6 text-white"
+                  />
                 </div>
 
                 <div class="flex-1 min-w-0">
@@ -273,7 +288,10 @@ function handleDeleteDeck(deck: Deck) {
                   </h3>
                   <div class="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                     <span>{{ getCardCount(deck.id) }} cartões</span>
-                    <span v-if="getDueCardCount(deck.id) > 0" class="inline-flex items-center px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium">
+                    <span
+                      v-if="getDueCardCount(deck.id) > 0"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium"
+                    >
                       {{ getDueCardCount(deck.id) }} pendentes
                     </span>
                   </div>
@@ -300,7 +318,10 @@ function handleDeleteDeck(deck: Deck) {
               </div>
 
               <div class="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
-                <p v-if="deck.description" class="text-xs text-muted-foreground truncate flex-1 mr-4">
+                <p
+                  v-if="deck.description"
+                  class="text-xs text-muted-foreground truncate flex-1 mr-4"
+                >
                   {{ deck.description }}
                 </p>
                 <div class="flex items-center text-primary text-sm font-medium">

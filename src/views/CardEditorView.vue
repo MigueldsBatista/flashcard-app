@@ -1,67 +1,67 @@
 <script setup lang="ts">
-import CardRenderer from '@/components/CardRenderer.vue'
-import ImageOcclusionEditor from '@/components/ImageOcclusionEditor.vue'
-import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
-import Dialog from '@/components/ui/Dialog.vue'
-import LoadingState from '@/components/ui/LoadingState.vue'
-import Tabs from '@/components/ui/Tabs.vue'
-import Textarea from '@/components/ui/Textarea.vue'
-import { useFlashcardStore } from '@/stores/flashcard'
-import type { CardContent, Card as FlashCard, ImageOcclusion } from '@/types/flashcard'
-import { ArrowLeft, Calculator, Edit, Eye, FilePlus, FileText, Grid3X3, Trash2 } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import CardRenderer from '@/components/CardRenderer.vue';
+import ImageOcclusionEditor from '@/components/ImageOcclusionEditor.vue';
+import Button from '@/components/ui/Button.vue';
+import Card from '@/components/ui/Card.vue';
+import Dialog from '@/components/ui/Dialog.vue';
+import LoadingState from '@/components/ui/LoadingState.vue';
+import Tabs from '@/components/ui/Tabs.vue';
+import Textarea from '@/components/ui/Textarea.vue';
+import { useFlashcardStore } from '@/stores/flashcard';
+import type { CardContent, Card as FlashCard, ImageOcclusion } from '@/types/flashcard';
+import { ArrowLeft, Calculator, Edit, Eye, FilePlus, FileText, Grid3X3, Trash2 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const route = useRoute()
-const router = useRouter()
-const store = useFlashcardStore()
+const route = useRoute();
+const router = useRouter();
+const store = useFlashcardStore();
 
-const deckId = computed(() => route.params.id as string)
+const deckId = computed(() => route.params.id as string);
 
-const isCreating = ref(false)
-const editingCard = ref<FlashCard | null>(null)
-const previewCard = ref<FlashCard | null>(null)
+const isCreating = ref(false);
+const editingCard = ref<FlashCard | null>(null);
+const previewCard = ref<FlashCard | null>(null);
 
-const cardType = ref<'text' | 'latex' | 'occlusion'>('text')
-const frontContent = ref('')
-const backContent = ref('')
+const cardType = ref<'text' | 'occlusion'>('text');
+const frontContent = ref('');
+const backContent = ref('');
 
 // Occlusion-specific state
-const occlusionImageData = ref('')
-const occlusionAreas = ref<ImageOcclusion[]>([])
+const occlusionImageData = ref('');
+const occlusionAreas = ref<ImageOcclusion[]>([]);
 
-const deck = computed(() => store.decks.find(d => d.id === deckId.value))
-const deckCards = computed(() => store.cards.filter(card => card.deckId === deckId.value))
+const deck = computed(() => store.decks.find(d => d.id === deckId.value));
+const deckCards = computed(() => store.cards.filter(card => card.deckId === deckId.value));
 
 // Removed 'code' type - only text, latex, and occlusion
 const cardTypeTabs = [
   { id: 'text', label: 'Texto', icon: FileText },
   { id: 'latex', label: 'Fórmulas', icon: Calculator },
-  { id: 'occlusion', label: 'Oclusão', icon: Grid3X3 },
-]
+  { id: 'occlusion', label: 'Oclusão', icon: Grid3X3 }
+];
 
 // Computed: check if form is valid for current card type
 const isFormValid = computed(() => {
   if (cardType.value === 'occlusion') {
-    return occlusionImageData.value && occlusionAreas.value.length > 0
+    return occlusionImageData.value && occlusionAreas.value.length > 0;
   }
-  return frontContent.value.trim() && backContent.value.trim()
-})
+  return frontContent.value.trim() && backContent.value.trim();
+});
 
 function handleCreateCard() {
   if (cardType.value === 'occlusion') {
-    handleCreateOcclusionCard()
-    return
+    handleCreateOcclusionCard();
+    return;
   }
 
-  if (!frontContent.value.trim() || !backContent.value.trim()) return
+  if (!frontContent.value.trim() || !backContent.value.trim()) return;
 
   const content: CardContent = {
     front: frontContent.value,
     back: backContent.value,
-    type: cardType.value,
-  }
+    type: cardType.value
+  };
 
   store.addCard({
     deckId: deckId.value,
@@ -71,23 +71,23 @@ function handleCreateCard() {
     easeFactor: 2.5,
     repetitions: 0,
     lapses: 0,
-    nextReview: new Date(),
-  })
+    nextReview: new Date()
+  });
 
-  resetForm()
-  isCreating.value = false
+  resetForm();
+  isCreating.value = false;
 }
 
 function handleCreateOcclusionCard() {
-  if (!occlusionImageData.value || occlusionAreas.value.length === 0) return
+  if (!occlusionImageData.value || occlusionAreas.value.length === 0) return;
 
   const content: CardContent = {
     front: `Identifique as ${occlusionAreas.value.length} área(s) oculta(s)`,
     back: 'Clique nas áreas para revelar',
     type: 'occlusion',
     imageData: occlusionImageData.value,
-    imageOcclusions: occlusionAreas.value,
-  }
+    imageOcclusions: occlusionAreas.value
+  };
 
   store.addCard({
     deckId: deckId.value,
@@ -97,105 +97,105 @@ function handleCreateOcclusionCard() {
     easeFactor: 2.5,
     repetitions: 0,
     lapses: 0,
-    nextReview: new Date(),
-  })
+    nextReview: new Date()
+  });
 
-  resetForm()
-  isCreating.value = false
+  resetForm();
+  isCreating.value = false;
 }
 
 function handleOcclusionSave(data: { imageData: string; occlusions: ImageOcclusion[] }) {
-  occlusionImageData.value = data.imageData
-  occlusionAreas.value = data.occlusions
-  handleCreateOcclusionCard()
+  occlusionImageData.value = data.imageData;
+  occlusionAreas.value = data.occlusions;
+  handleCreateOcclusionCard();
 }
 
 function handleUpdateCard() {
-  if (!editingCard.value) return
+  if (!editingCard.value) return;
 
   if (cardType.value === 'occlusion') {
-    if (!occlusionImageData.value || occlusionAreas.value.length === 0) return
+    if (!occlusionImageData.value || occlusionAreas.value.length === 0) return;
 
     const content: CardContent = {
       front: `Identifique as ${occlusionAreas.value.length} área(s) oculta(s)`,
       back: 'Clique nas áreas para revelar',
       type: 'occlusion',
       imageData: occlusionImageData.value,
-      imageOcclusions: occlusionAreas.value,
-    }
-    store.updateCard(editingCard.value.id, { content })
+      imageOcclusions: occlusionAreas.value
+    };
+    store.updateCard(editingCard.value.id, { content });
   } else {
-    if (!frontContent.value.trim() || !backContent.value.trim()) return
+    if (!frontContent.value.trim() || !backContent.value.trim()) return;
 
     const content: CardContent = {
       front: frontContent.value,
       back: backContent.value,
-      type: cardType.value,
-    }
-    store.updateCard(editingCard.value.id, { content })
+      type: cardType.value
+    };
+    store.updateCard(editingCard.value.id, { content });
   }
 
-  resetForm()
-  editingCard.value = null
+  resetForm();
+  editingCard.value = null;
 }
 
 function handleEditCard(card: FlashCard) {
-  editingCard.value = card
-  frontContent.value = card.content.front
-  backContent.value = card.content.back
+  editingCard.value = card;
+  frontContent.value = card.content.front;
+  backContent.value = card.content.back;
   // Map old 'code' type to 'text' for backwards compatibility
-  const type = card.content.type === 'code' ? 'text' : card.content.type
-  cardType.value = type as 'text' | 'latex' | 'occlusion'
-  occlusionImageData.value = card.content.imageData || ''
-  occlusionAreas.value = card.content.imageOcclusions ? [...card.content.imageOcclusions] : []
+  const type = card.content.type === 'code' ? 'text' : card.content.type;
+  cardType.value = type as 'text' | 'occlusion';
+  occlusionImageData.value = card.content.imageData || '';
+  occlusionAreas.value = card.content.imageOcclusions ? [...card.content.imageOcclusions] : [];
 }
 
 function resetForm() {
-  frontContent.value = ''
-  backContent.value = ''
-  cardType.value = 'text'
-  occlusionImageData.value = ''
-  occlusionAreas.value = []
+  frontContent.value = '';
+  backContent.value = '';
+  cardType.value = 'text';
+  occlusionImageData.value = '';
+  occlusionAreas.value = [];
 }
 
 function handleOpenCreate() {
-  resetForm()
-  isCreating.value = true
+  resetForm();
+  isCreating.value = true;
 }
 
 function getCardTypeIcon(type: string) {
   switch (type) {
-    case 'text': return FileText
-    case 'code': return FileText // Map code to text icon
-    case 'latex': return Calculator
-    case 'occlusion': return Grid3X3
-    default: return FileText
+    case 'text': return FileText;
+    case 'code': return FileText; // Map code to text icon
+    case 'latex': return Calculator;
+    case 'occlusion': return Grid3X3;
+    default: return FileText;
   }
 }
 
 function getCardTypeLabel(type: string) {
   switch (type) {
-    case 'text': return 'Texto'
-    case 'code': return 'Texto'
-    case 'latex': return 'Fórmula'
-    case 'occlusion': return 'Oclusão'
-    default: return 'Texto'
+    case 'text': return 'Texto';
+    case 'code': return 'Texto';
+    case 'latex': return 'Fórmula';
+    case 'occlusion': return 'Oclusão';
+    default: return 'Texto';
   }
 }
 
 function handleDeleteCard(card: FlashCard) {
   if (confirm('Tem certeza que deseja excluir este cartão?')) {
-    store.deleteCard(card.id)
+    store.deleteCard(card.id);
   }
 }
 
 function handleCancelOcclusion() {
   if (editingCard.value) {
-    editingCard.value = null
+    editingCard.value = null;
   } else {
-    isCreating.value = false
+    isCreating.value = false;
   }
-  resetForm()
+  resetForm();
 }
 </script>
 
@@ -204,7 +204,12 @@ function handleCancelOcclusion() {
     <div class="max-w-2xl mx-auto">
       <!-- Header - compact for mobile -->
       <div class="mb-4 sm:mb-6 flex items-center gap-3">
-        <Button variant="ghost" size="sm" class="p-2" @click="router.push('/decks')">
+        <Button
+          variant="ghost"
+          size="sm"
+          class="p-2"
+          @click="router.push('/decks')"
+        >
           <ArrowLeft class="w-5 h-5" />
         </Button>
         <div class="flex-1 min-w-0">
@@ -215,10 +220,10 @@ function handleCancelOcclusion() {
             {{ deckCards.length }} {{ deckCards.length === 1 ? 'cartão' : 'cartões' }}
           </p>
         </div>
-        
+
         <!-- Desktop Create Button -->
         <div class="hidden md:block">
-          <Button 
+          <Button
             class="flex items-center gap-2 px-6 shadow-md"
             @click="handleOpenCreate"
           >
@@ -229,8 +234,8 @@ function handleCancelOcclusion() {
       </div>
 
       <!-- Create/Edit Dialog -->
-      <Dialog 
-        :open="isCreating || editingCard !== null" 
+      <Dialog
+        :open="isCreating || editingCard !== null"
         @update:open="(v) => { if (!v) { isCreating = false; editingCard = null; resetForm() } }"
       >
         <template #default="{ close }">
@@ -239,10 +244,16 @@ function handleCancelOcclusion() {
               {{ editingCard ? 'Editar Cartão' : 'Novo Cartão' }}
             </h2>
 
-            <Tabs v-model="cardType" :tabs="cardTypeTabs">
+            <Tabs
+              v-model="cardType"
+              :tabs="cardTypeTabs"
+            >
               <template #default="{ activeTab }">
                 <!-- Text Type -->
-                <div v-if="activeTab === 'text'" class="space-y-3">
+                <div
+                  v-if="activeTab === 'text'"
+                  class="space-y-3"
+                >
                   <div>
                     <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
                       Pergunta
@@ -266,7 +277,10 @@ function handleCancelOcclusion() {
                 </div>
 
                 <!-- LaTeX Type -->
-                <div v-if="activeTab === 'latex'" class="space-y-3">
+                <div
+                  v-if="activeTab === 'latex'"
+                  class="space-y-3"
+                >
                   <div>
                     <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
                       Pergunta
@@ -308,8 +322,15 @@ function handleCancelOcclusion() {
             </Tabs>
 
             <!-- Action buttons for non-occlusion types -->
-            <div v-if="cardType !== 'occlusion'" class="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-              <Button variant="outline" class="sm:flex-none" @click="close(); resetForm()">
+            <div
+              v-if="cardType !== 'occlusion'"
+              class="flex flex-col-reverse sm:flex-row gap-2 pt-2"
+            >
+              <Button
+                variant="outline"
+                class="sm:flex-none"
+                @click="close(); resetForm()"
+              >
                 Cancelar
               </Button>
               <Button
@@ -325,11 +346,18 @@ function handleCancelOcclusion() {
       </Dialog>
 
       <!-- Preview Dialog -->
-      <Dialog :open="previewCard !== null" @update:open="(v) => !v && (previewCard = null)">
+      <Dialog
+        :open="previewCard !== null"
+        @update:open="(v) => !v && (previewCard = null)"
+      >
         <template #default>
           <div class="space-y-4">
             <h2 class="text-lg font-semibold text-foreground">Prévia</h2>
-            <CardRenderer v-if="previewCard" :card="previewCard" :show-answer="true" />
+            <CardRenderer
+              v-if="previewCard"
+              :card="previewCard"
+              :show-answer="true"
+            />
           </div>
         </template>
       </Dialog>
@@ -360,7 +388,10 @@ function handleCancelOcclusion() {
           >
             <div class="flex items-start gap-2.5">
               <div class="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                <component :is="getCardTypeIcon(card.content.type)" class="w-3.5 h-3.5" />
+                <component
+                  :is="getCardTypeIcon(card.content.type)"
+                  class="w-3.5 h-3.5"
+                />
               </div>
 
               <div class="flex-1 min-w-0">
@@ -379,13 +410,25 @@ function handleCancelOcclusion() {
               </div>
 
               <div class="flex items-center gap-1 flex-shrink-0">
-                <Button variant="ghost" size="sm" @click="previewCard = card">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click="previewCard = card"
+                >
                   <Eye class="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" @click="handleEditCard(card)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click="handleEditCard(card)"
+                >
                   <Edit class="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" @click="handleDeleteCard(card)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click="handleDeleteCard(card)"
+                >
                   <Trash2 class="w-4 h-4 text-destructive" />
                 </Button>
               </div>

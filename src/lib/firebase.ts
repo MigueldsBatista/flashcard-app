@@ -10,7 +10,6 @@
 // // Initialize Firebase
 // const app = initializeApp(firebaseConfig);
 
-
 // // Initialize Firebase Cloud Messaging and get a reference to the service
 // const messaging = getMessaging(app);
 

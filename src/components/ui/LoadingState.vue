@@ -3,8 +3,8 @@ import Card from '@/components/ui/Card.vue';
 import { Loader2 } from 'lucide-vue-next';
 
 defineProps<{
-  message?: string
-}>()
+  message?: string;
+}>();
 </script>
 
 <template>

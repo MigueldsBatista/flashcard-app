@@ -5,7 +5,6 @@ Token optimization and prompt formatting for efficient AI generation.
 
 import re
 
-
 MAX_TEXT_LENGTH = 4000  # RN-IA01: Limit to avoid high costs
 
 
@@ -95,7 +94,7 @@ def format_generation_prompt(
         "REGRAS:",
         "1. Pergunta clara e resposta curta (fácil de decorar)",
         "2. Mantenha o idioma original do conteúdo",
-        "3. Use type='latex' para fórmulas matemáticas",
+        "3. Use type='code' apenas para exemplos de programação",
         f"4. QUANTIDADE: Gere EXATAMENTE {target_cards} cards",
     ]
     

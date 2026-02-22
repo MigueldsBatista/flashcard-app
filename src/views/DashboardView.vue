@@ -1,98 +1,98 @@
 <script setup lang="ts">
-import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
-import Checkbox from '@/components/ui/Checkbox.vue'
-import LoadingState from '@/components/ui/LoadingState.vue'
-import Progress from '@/components/ui/Progress.vue'
-import Tabs from '@/components/ui/Tabs.vue'
-import { useNotifications } from '@/composables/useNotifications'
-import { getDueCards, getNewCards } from '@/services/spaced-repetition'
-import { useFlashcardStore } from '@/stores/flashcard'
-import { Brain, Calendar, Filter, Flame, Target, TrendingUp, Zap } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import Button from '@/components/ui/Button.vue';
+import Card from '@/components/ui/Card.vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
+import LoadingState from '@/components/ui/LoadingState.vue';
+import Progress from '@/components/ui/Progress.vue';
+import Tabs from '@/components/ui/Tabs.vue';
+import { useNotifications } from '@/composables/useNotifications';
+import { getDueCards, getNewCards } from '@/services/spaced-repetition';
+import { useFlashcardStore } from '@/stores/flashcard';
+import { Brain, Calendar, Filter, Flame, Target, TrendingUp, Zap } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
-const store = useFlashcardStore()
-const { success } = useNotifications()
+const router = useRouter();
+const store = useFlashcardStore();
+const { success } = useNotifications();
 
-const studyMode = ref('random')
-const selectedDecks = ref<string[]>([])
+const studyMode = ref('random');
+const selectedDecks = ref<string[]>([]);
 
 const studyTabs = [
   { id: 'random', label: 'Modo Aleatório', icon: Zap },
-  { id: 'select', label: 'Selecionar Baralhos', icon: Filter },
-]
+  { id: 'select', label: 'Selecionar Baralhos', icon: Filter }
+];
 
 // Compute available cards (due + new) per deck
 const deckAvailableCards = computed(() => {
-  const result: Record<string, number> = {}
+  const result: Record<string, number> = {};
   for (const deck of store.decks) {
-    const deckCards = store.cards.filter(c => c.deckId === deck.id)
-    const due = getDueCards(deckCards).length
-    const newCards = getNewCards(deckCards, store.settings.dailyNewCardLimit).length
-    result[deck.id] = due + newCards
+    const deckCards = store.cards.filter(c => c.deckId === deck.id);
+    const due = getDueCards(deckCards).length;
+    const newCards = getNewCards(deckCards, store.settings.dailyNewCardLimit).length;
+    result[deck.id] = due + newCards;
   }
-  return result
-})
+  return result;
+});
 
 // Total cards available for random study mode (due + new, excluding empty decks)
 const totalStudyableCards = computed(() => {
-  return Object.values(deckAvailableCards.value).reduce((sum, count) => sum + count, 0)
-})
+  return Object.values(deckAvailableCards.value).reduce((sum, count) => sum + count, 0);
+});
 
 function toggleDeckSelection(deckId: string, isSelected: boolean) {
   // Prevent selecting decks with no available cards
-  if (isSelected && (deckAvailableCards.value[deckId] ?? 0) === 0) return
+  if (isSelected && (deckAvailableCards.value[deckId] ?? 0) === 0) return;
   if (isSelected) {
-    selectedDecks.value.push(deckId)
+    selectedDecks.value.push(deckId);
   } else {
-    selectedDecks.value = selectedDecks.value.filter(id => id !== deckId)
+    selectedDecks.value = selectedDecks.value.filter(id => id !== deckId);
   }
 }
 
 function startStudy() {
   if (studyMode.value === 'select') {
     if (selectedDecks.value.length > 0) {
-      success('Sessão de estudo iniciada!')
-      router.push({ path: '/study', query: { decks: selectedDecks.value.join(',') } })
+      success('Sessão de estudo iniciada!');
+      router.push({ path: '/study', query: { decks: selectedDecks.value.join(',') } });
     }
-    return
+    return;
   }
 
   if (totalStudyableCards.value > 0) {
-    success('Sessão de estudo iniciada!')
-    router.push('/study')
+    success('Sessão de estudo iniciada!');
+    router.push('/study');
   }
 }
 
 function getReadinessColor(score: number): string {
-  if (score >= 80) return 'text-success'
-  if (score >= 50) return 'text-warning'
-  return 'text-destructive'
+  if (score >= 80) return 'text-success';
+  if (score >= 50) return 'text-warning';
+  return 'text-destructive';
 }
 
 function getReadinessLabel(score: number): string {
-  if (score >= 80) return 'Excelente'
-  if (score >= 50) return 'Atenção Necessária'
-  return 'Crítico'
+  if (score >= 80) return 'Excelente';
+  if (score >= 50) return 'Atenção Necessária';
+  return 'Crítico';
 }
 
 function formatCooldown(date: Date | null): string {
-  if (!date) return 'Nenhum cartão para revisar!'
-  
-  const now = new Date()
-  const diff = date.getTime() - now.getTime()
-  
-  if (diff <= 0) return 'Pronto para revisar!'
-  
-  const minutes = Math.ceil(diff / (1000 * 60))
-  if (minutes < 60) return `Próxima revisão em ${minutes} min`
-  
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `Próxima revisão em ${hours}h`
-  
-  return 'Próxima revisão amanhã'
+  if (!date) return 'Nenhum cartão para revisar!';
+
+  const now = new Date();
+  const diff = date.getTime() - now.getTime();
+
+  if (diff <= 0) return 'Pronto para revisar!';
+
+  const minutes = Math.ceil(diff / (1000 * 60));
+  if (minutes < 60) return `Próxima revisão em ${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Próxima revisão em ${hours}h`;
+
+  return 'Próxima revisão amanhã';
 }
 </script>
 
@@ -113,7 +113,10 @@ function formatCooldown(date: Date | null): string {
         <LoadingState message="Carregando dados..." />
       </template>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
         <!-- Left Column -->
         <div class="space-y-6">
           <!-- Readiness Score - Hero Section -->
@@ -137,8 +140,11 @@ function formatCooldown(date: Date | null): string {
                 <Brain :class="['w-16 h-16', getReadinessColor(store.stats.readinessScore)]" />
               </div>
             </div>
-            
-            <Progress :value="store.stats.readinessScore" class="mb-4" />
+
+            <Progress
+              :value="store.stats.readinessScore"
+              class="mb-4"
+            />
 
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -275,10 +281,16 @@ function formatCooldown(date: Date | null): string {
             <h2 class="text-lg font-semibold text-foreground mb-4">
               Iniciar Sessão
             </h2>
-            <Tabs v-model="studyMode" :tabs="studyTabs">
+            <Tabs
+              v-model="studyMode"
+              :tabs="studyTabs"
+            >
               <template #default="{ activeTab }">
                 <!-- Random Mode -->
-                <div v-if="activeTab === 'random'" class="space-y-4">
+                <div
+                  v-if="activeTab === 'random'"
+                  class="space-y-4"
+                >
                   <p class="text-sm text-muted-foreground">
                     Estude cartões de todos os seus baralhos misturados. O algoritmo prioriza cartões vencidos.
                   </p>
@@ -299,13 +311,19 @@ function formatCooldown(date: Date | null): string {
                 </div>
 
                 <!-- Select Mode -->
-                <div v-if="activeTab === 'select'" class="space-y-4">
+                <div
+                  v-if="activeTab === 'select'"
+                  class="space-y-4"
+                >
                   <p class="text-sm text-muted-foreground">
                     Selecione os baralhos que deseja estudar nesta sessão.
                   </p>
-                  
+
                   <div class="space-y-1 max-h-60 overflow-y-auto border rounded-lg p-2">
-                    <div v-if="store.decks.length === 0" class="text-center text-sm text-muted-foreground py-4">
+                    <div
+                      v-if="store.decks.length === 0"
+                      class="text-center text-sm text-muted-foreground py-4"
+                    >
                       Nenhum baralho encontrado.
                     </div>
                     <div

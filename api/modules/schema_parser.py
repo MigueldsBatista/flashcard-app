@@ -4,6 +4,7 @@ Pydantic models matching frontend flashcard.ts types for AI generation.
 """
 
 from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -11,7 +12,7 @@ class CardContent(BaseModel):
     """Content structure for a flashcard, matching frontend CardContent type."""
     front: str = Field(..., description="Front side of the card (question)")
     back: str = Field(..., description="Back side of the card (answer)")
-    type: Literal['text', 'latex', 'code'] = Field(
+    type: Literal['text', 'code'] = Field(
         default='text',
         description="Type of card content"
     )

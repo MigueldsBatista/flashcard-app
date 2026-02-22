@@ -3,27 +3,27 @@ import { useAuthStore } from '@/stores/auth';
 import { BarChart3, FolderOpen, Home, LogOut, Settings, Sparkles } from 'lucide-vue-next';
 
 interface Props {
-  currentView: string
+  currentView: string;
 }
 
-defineProps<Props>()
+defineProps<Props>();
 
 const emit = defineEmits<{
-  navigate: [view: string]
-}>()
+  navigate: [view: string];
+}>();
 
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
 const navItems = [
   { id: 'home', icon: Home, label: 'Início' },
   { id: 'decks', icon: FolderOpen, label: 'Baralhos' },
   { id: 'ai-generate', icon: Sparkles, label: 'Gerar com IA' },
   { id: 'stats', icon: BarChart3, label: 'Estatísticas' },
-  { id: 'settings', icon: Settings, label: 'Ajustes' },
-]
+  { id: 'settings', icon: Settings, label: 'Ajustes' }
+];
 
 function handleLogout() {
-  authStore.signOut()
+  authStore.signOut();
 }
 </script>
 
@@ -50,19 +50,22 @@ function handleLogout() {
         ]"
         @click="emit('navigate', item.id)"
       >
-        <component 
-          :is="item.icon" 
+        <component
+          :is="item.icon"
           :class="[
             'w-5 h-5 transition-transform group-hover:scale-110',
             currentView === item.id ? 'text-primary-foreground' : 'text-muted-foreground'
-          ]" 
+          ]"
         />
         <span class="font-medium">{{ item.label }}</span>
       </button>
     </nav>
 
     <div class="p-4 border-t border-border">
-      <div v-if="authStore.user" class="mb-4 px-4 flex items-center gap-3">
+      <div
+        v-if="authStore.user"
+        class="mb-4 px-4 flex items-center gap-3"
+      >
         <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
           <span class="text-primary font-bold">{{ authStore.user.email?.[0]?.toUpperCase() ?? 'U' }}</span>
         </div>
@@ -71,7 +74,7 @@ function handleLogout() {
           <p class="text-xs text-muted-foreground truncate">{{ authStore.user.email ?? '' }}</p>
         </div>
       </div>
-      
+
       <button
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-colors group"
         @click="handleLogout"

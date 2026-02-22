@@ -2,25 +2,25 @@
 import { ref, watch } from 'vue';
 
 interface Props {
-  modelValue?: string
-  tabs: Array<{ id: string; label: string; icon?: any }>
+  modelValue?: string;
+  tabs: Array<{ id: string; label: string; icon?: any }>;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  'update:modelValue': [value: string];
+}>();
 
-const activeTab = ref(props.modelValue || props.tabs[0]?.id)
+const activeTab = ref(props.modelValue || props.tabs[0]?.id);
 
 watch(() => props.modelValue, (newVal) => {
-  if (newVal) activeTab.value = newVal
-})
+  if (newVal) activeTab.value = newVal;
+});
 
 function selectTab(id: string) {
-  activeTab.value = id
-  emit('update:modelValue', id)
+  activeTab.value = id;
+  emit('update:modelValue', id);
 }
 </script>
 
@@ -39,7 +39,11 @@ function selectTab(id: string) {
         ]"
         @click="selectTab(tab.id)"
       >
-        <component :is="tab.icon" v-if="tab.icon" class="w-4 h-4" />
+        <component
+          :is="tab.icon"
+          v-if="tab.icon"
+          class="w-4 h-4"
+        />
         {{ tab.label }}
       </button>
     </div>

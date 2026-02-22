@@ -2,16 +2,16 @@
 import { Redo2, Undo2 } from 'lucide-vue-next';
 
 interface Props {
-  canUndo: boolean
-  canRedo: boolean
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  undo: []
-  redo: []
-}>()
+  undo: [];
+  redo: [];
+}>();
 </script>
 
 <template>

@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import Card from '@/components/ui/Card.vue'
-import LoadingState from '@/components/ui/LoadingState.vue'
-import { useStatistics } from '@/composables/useStatistics'
-import { useFlashcardStore } from '@/stores/flashcard'
+import Card from '@/components/ui/Card.vue';
+import LoadingState from '@/components/ui/LoadingState.vue';
+import { useStatistics } from '@/composables/useStatistics';
+import { useFlashcardStore } from '@/stores/flashcard';
 import {
-    ArcElement,
-    BarElement,
-    CategoryScale,
-    Chart as ChartJS,
-    Filler,
-    Legend,
-    LinearScale,
-    LineElement,
-    PointElement,
-    Title,
-    Tooltip,
-} from 'chart.js'
-import { BarChart3, Calendar, Clock, Flame, Target, TrendingUp } from 'lucide-vue-next'
-import { storeToRefs } from 'pinia'
-import { Bar, Doughnut, Line } from 'vue-chartjs'
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip
+} from 'chart.js';
+import { BarChart3, Calendar, Clock, Flame, Target, TrendingUp } from 'lucide-vue-next';
+import { storeToRefs } from 'pinia';
+import { Bar, Doughnut, Line } from 'vue-chartjs';
 
 ChartJS.register(
   CategoryScale,
@@ -31,17 +31,17 @@ ChartJS.register(
   Tooltip,
   Legend,
   Filler
-)
+);
 
-const store = useFlashcardStore()
-const { loading } = storeToRefs(store)
-const { 
-  chartOptions, 
-  doughnutOptions, 
-  activityData, 
-  accuracyData, 
-  distributionData 
-} = useStatistics()
+const store = useFlashcardStore();
+const { loading } = storeToRefs(store);
+const {
+  chartOptions,
+  doughnutOptions,
+  activityData,
+  accuracyData,
+  distributionData
+} = useStatistics();
 </script>
 
 <template>
@@ -62,97 +62,106 @@ const {
       </template>
 
       <template v-else>
-      <!-- Key Metrics - 4 columns on desktop -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card class="p-4">
-          <div class="flex flex-col gap-3">
-            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Target class="w-5 h-5 text-primary" />
+        <!-- Key Metrics - 4 columns on desktop -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card class="p-4">
+            <div class="flex flex-col gap-3">
+              <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Target class="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Total de Cartões</p>
+                <p class="text-2xl font-bold text-foreground">{{ store.stats.totalCards }}</p>
+              </div>
             </div>
-            <div>
-              <p class="text-xs text-muted-foreground">Total de Cartões</p>
-              <p class="text-2xl font-bold text-foreground">{{ store.stats.totalCards }}</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card class="p-4">
-          <div class="flex flex-col gap-3">
-            <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+          <Card class="p-4">
+            <div class="flex flex-col gap-3">
+              <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <TrendingUp class="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Precisão Hoje</p>
+                <p class="text-2xl font-bold text-foreground">{{ Math.round(store.stats.today.accuracy * 100) }}%</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card class="p-4">
+            <div class="flex flex-col gap-3">
+              <div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                <Flame class="w-5 h-5 text-orange-500" />
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Sequência</p>
+                <p class="text-2xl font-bold text-foreground">{{ store.stats.streak }} dias</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card class="p-4">
+            <div class="flex flex-col gap-3">
+              <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <Clock class="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Tempo Hoje</p>
+                <p class="text-2xl font-bold text-foreground">{{ store.stats.today.timeSpent >= 1 ? Math.round(store.stats.today.timeSpent) + 'min' : Math.round(store.stats.today.timeSpent * 60) + 's' }}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Activity Chart -->
+          <Card class="p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <BarChart3 class="w-5 h-5 text-primary" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Atividade (Últimos 30 dias)
+              </h2>
+            </div>
+            <div class="h-64">
+              <Bar
+                :data="activityData"
+                :options="chartOptions"
+              />
+            </div>
+          </Card>
+
+          <!-- Accuracy Trend -->
+          <Card class="p-6">
+            <div class="flex items-center gap-2 mb-4">
               <TrendingUp class="w-5 h-5 text-success" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Tendência de Precisão
+              </h2>
             </div>
-            <div>
-              <p class="text-xs text-muted-foreground">Precisão Hoje</p>
-              <p class="text-2xl font-bold text-foreground">{{ Math.round(store.stats.today.accuracy * 100) }}%</p>
+            <div class="h-64">
+              <Line
+                :data="accuracyData"
+                :options="chartOptions"
+              />
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card class="p-4">
-          <div class="flex flex-col gap-3">
-            <div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <Flame class="w-5 h-5 text-orange-500" />
+          <!-- Card Distribution - spans full width on desktop or remains in grid -->
+          <Card class="p-6 md:col-span-full">
+            <div class="flex items-center gap-2 mb-4">
+              <Calendar class="w-5 h-5 text-primary" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Distribuição de Cartões
+              </h2>
             </div>
-            <div>
-              <p class="text-xs text-muted-foreground">Sequência</p>
-              <p class="text-2xl font-bold text-foreground">{{ store.stats.streak }} dias</p>
+            <div class="h-80 w-full flex justify-center">
+              <Doughnut
+                :data="distributionData"
+                :options="doughnutOptions"
+              />
             </div>
-          </div>
-        </Card>
-
-        <Card class="p-4">
-          <div class="flex flex-col gap-3">
-            <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-              <Clock class="w-5 h-5 text-purple-500" />
-            </div>
-            <div>
-              <p class="text-xs text-muted-foreground">Tempo Hoje</p>
-              <p class="text-2xl font-bold text-foreground">{{ store.stats.today.timeSpent >= 1 ? Math.round(store.stats.today.timeSpent) + 'min' : Math.round(store.stats.today.timeSpent * 60) + 's' }}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Activity Chart -->
-        <Card class="p-6">
-          <div class="flex items-center gap-2 mb-4">
-            <BarChart3 class="w-5 h-5 text-primary" />
-            <h2 class="text-lg font-semibold text-foreground">
-              Atividade (Últimos 30 dias)
-            </h2>
-          </div>
-          <div class="h-64">
-            <Bar :data="activityData" :options="chartOptions" />
-          </div>
-        </Card>
-
-        <!-- Accuracy Trend -->
-        <Card class="p-6">
-          <div class="flex items-center gap-2 mb-4">
-            <TrendingUp class="w-5 h-5 text-success" />
-            <h2 class="text-lg font-semibold text-foreground">
-              Tendência de Precisão
-            </h2>
-          </div>
-          <div class="h-64">
-            <Line :data="accuracyData" :options="chartOptions" />
-          </div>
-        </Card>
-
-        <!-- Card Distribution - spans full width on desktop or remains in grid -->
-        <Card class="p-6 md:col-span-full">
-          <div class="flex items-center gap-2 mb-4">
-            <Calendar class="w-5 h-5 text-primary" />
-            <h2 class="text-lg font-semibold text-foreground">
-              Distribuição de Cartões
-            </h2>
-          </div>
-          <div class="h-80 w-full flex justify-center">
-            <Doughnut :data="distributionData" :options="doughnutOptions" />
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
       </template>
     </div>
   </div>
