@@ -76,7 +76,7 @@ async function handleRegister() {
           class="rounded-md bg-green-50 dark:bg-green-900/50 p-4 mb-6"
         >
           <div class="flex">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <!-- Heroicon name: solid/check-circle -->
               <svg
                 class="h-5 w-5 text-green-400"

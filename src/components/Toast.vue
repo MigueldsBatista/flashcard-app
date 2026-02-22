@@ -41,7 +41,7 @@ function getStyles(type: NotificationType) {
         >
           <component
             :is="getIcon(notification.type)"
-            class="w-5 h-5 flex-shrink-0"
+            class="w-5 h-5 shrink-0"
           />
           <p class="flex-1 text-sm font-medium">
             {{ notification.message }}

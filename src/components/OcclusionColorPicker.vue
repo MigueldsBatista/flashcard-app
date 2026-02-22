@@ -57,7 +57,7 @@ function toggleDropdown() {
     <Teleport to="body">
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-[100]"
+        class="fixed inset-0 z-100"
         @click="isOpen = false"
       >
         <div
