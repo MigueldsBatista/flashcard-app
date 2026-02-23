@@ -94,9 +94,14 @@ class TestNoContent(BaseAPITest):
 # ---------------------------------------------------------------------------
 
 class TestExtractionFailed(BaseAPITest):
-    def test_extract_text_raises_value_error(self):
-        """When extract_text raises ValueError, returns 400 EXTRACTION_FAILED."""
-        with patch("routes.generate.extract_text", side_effect=ValueError("imagem inválida")):
+    def test_extract_text_raises_extraction_failed(self):
+        """When extract_text raises ExtractionFailedException, returns 400 EXTRACTION_FAILED."""
+        from modules.exceptions import ExtractionFailedException
+
+        with patch(
+            "routes.generate.extract_text",
+            side_effect=ExtractionFailedException("imagem inválida"),
+        ):
             response = self.client.post(
                 "/api/generate",
                 files={"image": ("test.png", b"not-an-image", "image/png")},

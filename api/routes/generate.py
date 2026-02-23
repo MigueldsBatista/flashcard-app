@@ -62,13 +62,7 @@ async def generate_flashcards(
     if image:
         image_bytes = await image.read()
 
-        try:
-            source_text = extract_text(image_bytes)
-        except ValueError as e:
-            raise ExtractionFailedException(
-                str(e),
-                suggestion="Verifique se o arquivo é uma imagem válida",
-            )
+        source_text = extract_text(image_bytes)
 
         logger.info(f"🖼️ OCR extracted {len(source_text)} chars")
 

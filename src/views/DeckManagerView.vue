@@ -9,8 +9,8 @@ import Textarea from '@/components/ui/Textarea.vue';
 import { useDeckIcons } from '@/composables/useDeckIcons';
 import { useFlashcardStore } from '@/stores/flashcard';
 import type { Deck } from '@/types/flashcard';
-import { ChevronDown, ChevronRight, Edit, FolderOpen, FolderPlus, Share2, Trash2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ChevronDown, ChevronRight, Edit, FolderOpen, FolderPlus, MoreVertical, Share2, Trash2 } from 'lucide-vue-next';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -26,6 +26,30 @@ const newDeckIcon = ref('BookOpen');
 const showIconPicker = ref(false);
 const sharingDeck = ref<Deck | null>(null);
 const showShareDialog = ref(false);
+const openMenuDeckId = ref<string | null>(null);
+
+function toggleMenu(deckId: string) {
+  openMenuDeckId.value = openMenuDeckId.value === deckId ? null : deckId;
+}
+
+function closeMenu() {
+  openMenuDeckId.value = null;
+}
+
+function handleClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (!target.closest('.deck-menu-container')) {
+    closeMenu();
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 
 const colorOptions = [
   { name: 'Azul', value: '#3B82F6' },
@@ -293,45 +317,71 @@ function handleShareDeck(deck: Deck) {
                 </div>
 
                 <div class="flex-1 min-w-0">
-                  <h3 class="font-bold text-foreground text-lg leading-tight group-hover:text-primary transition-colors">
+                  <h3 class="font-bold text-foreground text-lg leading-tight group-hover:text-primary transition-colors truncate">
                     {{ deck.name }}
                   </h3>
                   <div class="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                    <span>{{ getCardCount(deck.id) }} cartões</span>
+                    <span class="whitespace-nowrap">{{ getCardCount(deck.id) }} cartões</span>
                     <span
                       v-if="getDueCardCount(deck.id) > 0"
-                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium whitespace-nowrap"
                     >
                       {{ getDueCardCount(deck.id) }} pendentes
                     </span>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                <!-- Three-dots menu -->
+                <div class="relative shrink-0 deck-menu-container">
                   <button
                     type="button"
-                    class="h-10 w-10 md:h-8 md:w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-                    title="Compartilhar"
-                    @click.stop="handleShareDeck(deck)"
+                    class="h-8 w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                    title="Opções"
+                    @click.stop="toggleMenu(deck.id)"
                   >
-                    <Share2 class="w-5 h-5 md:w-4 md:h-4 text-primary" />
+                    <MoreVertical class="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <button
-                    type="button"
-                    class="h-10 w-10 md:h-8 md:w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-                    title="Editar"
-                    @click.stop="handleEditDeck(deck)"
+
+                  <!-- Dropdown menu -->
+                  <Transition
+                    enter-active-class="transition ease-out duration-100"
+                    enter-from-class="opacity-0 scale-95"
+                    enter-to-class="opacity-100 scale-100"
+                    leave-active-class="transition ease-in duration-75"
+                    leave-from-class="opacity-100 scale-100"
+                    leave-to-class="opacity-0 scale-95"
                   >
-                    <Edit class="w-5 h-5 md:w-4 md:h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    class="h-10 w-10 md:h-8 md:w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-                    title="Excluir"
-                    @click.stop="handleDeleteDeck(deck)"
-                  >
-                    <Trash2 class="w-5 h-5 md:w-4 md:h-4 text-destructive" />
-                  </button>
+                    <div
+                      v-if="openMenuDeckId === deck.id"
+                      class="absolute right-0 top-full mt-1 w-44 bg-card border border-border rounded-xl shadow-lg z-50 py-1 overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                        @click.stop="handleShareDeck(deck); closeMenu()"
+                      >
+                        <Share2 class="w-4 h-4 text-muted-foreground" />
+                        Compartilhar
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                        @click.stop="handleEditDeck(deck); closeMenu()"
+                      >
+                        <Edit class="w-4 h-4 text-muted-foreground" />
+                        Editar
+                      </button>
+                      <div class="border-t border-border my-1" />
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        @click.stop="handleDeleteDeck(deck); closeMenu()"
+                      >
+                        <Trash2 class="w-4 h-4" />
+                        Excluir
+                      </button>
+                    </div>
+                  </Transition>
                 </div>
               </div>
 
@@ -342,7 +392,7 @@ function handleShareDeck(deck: Deck) {
                 >
                   {{ deck.description }}
                 </p>
-                <div class="flex items-center text-primary text-sm font-medium">
+                <div class="flex items-center text-primary text-sm font-medium ml-auto">
                   Ver Cartões
                   <ChevronRight class="w-4 h-4 ml-1" />
                 </div>
