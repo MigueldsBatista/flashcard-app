@@ -114,19 +114,15 @@ export class SupabaseShareService implements IShareService {
   }
 
   async getSharedDeckWithCards(token: string): Promise<SharedDeckData> {
-    // 1. Fetch the share
-    const share = await this.getShareByToken(token);
-    if (!share) throw new Error('SHARE_NOT_FOUND');
+    // Use SECURITY DEFINER RPC — bypasses RLS, validates token server-side
+    const { data, error } = await supabase.rpc('get_shared_deck_by_token', {
+      p_token: token
+    });
 
-    // 2. Fetch the deck
-    const { data: deckData, error: deckError } = await supabase
-      .from('decks')
-      .select('*')
-      .eq('id', share.deckId)
-      .single();
+    if (error) throw new Error(`Erro ao buscar baralho compartilhado: ${error.message}`);
+    if (!data || data.error) throw new Error(data?.error ?? 'SHARE_NOT_FOUND');
 
-    if (deckError) throw new Error(`Erro ao buscar baralho: ${deckError.message}`);
-
+    const deckData = data.deck;
     const deck: Deck = {
       id: deckData.id,
       name: deckData.name,
@@ -138,15 +134,7 @@ export class SupabaseShareService implements IShareService {
       updated: new Date(deckData.updated_at)
     };
 
-    // 3. Fetch cards of the deck
-    const { data: cardsData, error: cardsError } = await supabase
-      .from('cards')
-      .select('*')
-      .eq('deck_id', share.deckId);
-
-    if (cardsError) throw new Error(`Erro ao buscar cartões: ${cardsError.message}`);
-
-    const cards: Card[] = (cardsData ?? []).map(c => ({
+    const cards: Card[] = (data.cards ?? []).map((c: Record<string, unknown>) => ({
       id: c.id,
       deckId: c.deck_id,
       content: c.content,
@@ -155,76 +143,51 @@ export class SupabaseShareService implements IShareService {
       easeFactor: c.ease_factor,
       repetitions: c.repetitions,
       lapses: c.lapses,
-      lastReviewed: c.last_reviewed ? new Date(c.last_reviewed) : undefined,
-      nextReview: new Date(c.next_review),
-      created: new Date(c.created_at)
+      lastReviewed: c.last_reviewed ? new Date(c.last_reviewed as string) : undefined,
+      nextReview: new Date(c.next_review as string),
+      created: new Date(c.created_at as string)
     }));
 
-    // 4. Fetch owner username
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('id', share.ownerId)
-      .maybeSingle();
+    const shareData = data.share;
+    const share: DeckShare = {
+      id: shareData.id,
+      deckId: shareData.deck_id,
+      ownerId: shareData.owner_id,
+      shareToken: shareData.share_token,
+      permission: shareData.permission as SharePermission,
+      isActive: shareData.is_active,
+      createdAt: new Date(shareData.created_at),
+      accessCount: shareData.access_count
+    };
 
-    const ownerUsername = profileData?.username ?? null;
-
-    // 5. Increment access count (fire-and-forget)
-    this.incrementAccessCount(share.id).catch(() => { });
+    const ownerUsername = data.owner_username ?? null;
 
     return { deck, cards, share, ownerUsername };
   }
 
-  async cloneDeck(deckId: string, deckName: string): Promise<Deck> {
-    const userId = this.getUserId();
-
-    // 1. Create the new deck
-    const { data: newDeckData, error: deckError } = await supabase
-      .from('decks')
-      .insert({
-        user_id: userId,
-        name: `${deckName} (cópia)`
-      })
-      .select()
-      .single();
-
-    if (deckError) throw new Error(`Erro ao clonar baralho: ${deckError.message}`);
-
-    // 2. Fetch original cards
-    const { data: originalCards, error: cardsError } = await supabase
-      .from('cards')
-      .select('*')
-      .eq('deck_id', deckId);
-
-    if (cardsError) throw new Error(`Erro ao buscar cartões originais: ${cardsError.message}`);
-
-    // 3. Clone cards with reset SRS values
-    if (originalCards && originalCards.length > 0) {
-      const clonedCards = originalCards.map(c => ({
-        user_id: userId,
-        deck_id: newDeckData.id,
-        content: c.content,
-        status: 'new',
-        interval: 0,
-        ease_factor: 2.5,
-        repetitions: 0,
-        lapses: 0,
-        next_review: new Date().toISOString()
-      }));
-
-      const { error: insertError } = await supabase.from('cards').insert(clonedCards);
-      if (insertError) throw new Error(`Erro ao clonar cartões: ${insertError.message}`);
+  async cloneDeck(_deckId: string, deckName: string, shareToken?: string): Promise<Deck> {
+    if (!shareToken) {
+      throw new Error('Token de compartilhamento necessário para clonar');
     }
 
+    // Use SECURITY DEFINER RPC — bypasses RLS to read source cards
+    const { data, error } = await supabase.rpc('clone_shared_deck', {
+      p_token: shareToken,
+      p_new_name: `${deckName} (cópia)`
+    });
+
+    if (error) throw new Error(`Erro ao clonar baralho: ${error.message}`);
+    if (!data || data.error) throw new Error(data?.error ?? 'CLONE_FAILED');
+
     return {
-      id: newDeckData.id,
-      name: newDeckData.name,
-      description: newDeckData.description || undefined,
-      parentId: newDeckData.parent_id || undefined,
-      color: newDeckData.color || undefined,
-      icon: newDeckData.icon || undefined,
-      created: new Date(newDeckData.created_at),
-      updated: new Date(newDeckData.updated_at)
+      id: data.id,
+      name: data.name,
+      description: data.description || undefined,
+      parentId: data.parent_id || undefined,
+      color: data.color || undefined,
+      icon: data.icon || undefined,
+      created: new Date(data.created_at),
+      updated: new Date(data.updated_at)
     };
   }
 }

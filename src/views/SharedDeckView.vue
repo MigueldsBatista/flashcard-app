@@ -61,7 +61,7 @@ async function handleClone() {
   if (!data.value) return;
   cloning.value = true;
   try {
-    const cloned = await shareService.cloneDeck(data.value.deck.id, data.value.deck.name);
+    const cloned = await shareService.cloneDeck(data.value.deck.id, data.value.deck.name, token.value);
     success('Baralho salvo na sua biblioteca!');
     router.push(`/decks/${cloned.id}/cards`);
   } catch {

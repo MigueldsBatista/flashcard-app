@@ -74,6 +74,6 @@ export interface IShareService {
   deactivateShare(shareId: string): Promise<void>;
   getMyShares(): Promise<DeckShare[]>;
   incrementAccessCount(shareId: string): Promise<void>;
-  cloneDeck(deckId: string, deckName: string): Promise<Deck>;
+  cloneDeck(deckId: string, deckName: string, shareToken?: string): Promise<Deck>;
   getSharedDeckWithCards(token: string): Promise<SharedDeckData>;
 }
