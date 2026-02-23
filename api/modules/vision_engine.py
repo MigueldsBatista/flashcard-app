@@ -76,7 +76,7 @@ def extract_text(image_bytes: bytes) -> str:
             ]
         )
 
-        llm = get_llm()
+        llm = get_llm(require_vision=True)
         response = llm.invoke([message])
 
         extracted_text = (

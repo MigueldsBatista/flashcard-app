@@ -10,7 +10,7 @@ except ImportError:
 from langchain_core.language_models import BaseChatModel
 
 
-def get_llm() -> BaseChatModel:
+def get_llm(require_vision: bool = False) -> BaseChatModel:
     """Return a LangChain BaseChatModel selected by the LLM_PROVIDER env var."""
     provider = os.environ.get("LLM_PROVIDER", "groq").lower()
 
@@ -23,8 +23,11 @@ def get_llm() -> BaseChatModel:
             )
         from langchain_google_genai import ChatGoogleGenerativeAI
 
+        default_model = "gemini-2.0-flash"
+        model_name = os.environ.get("LLM_VISION_MODEL" if require_vision else "LLM_MODEL", default_model)
+
         return ChatGoogleGenerativeAI(
-            model=os.environ.get("LLM_MODEL", "gemini-2.0-flash"),
+            model=model_name,
             google_api_key=api_key,
             temperature=0.4,
             max_output_tokens=2048,
@@ -39,8 +42,11 @@ def get_llm() -> BaseChatModel:
             )
         from langchain_openai import ChatOpenAI
 
+        default_model = "gpt-4o-mini"
+        model_name = os.environ.get("LLM_VISION_MODEL" if require_vision else "LLM_MODEL", default_model)
+
         return ChatOpenAI(
-            model=os.environ.get("LLM_MODEL", "gpt-4o-mini"),
+            model=model_name,
             openai_api_key=api_key,
             temperature=0.4,
             max_tokens=2048,
@@ -55,8 +61,11 @@ def get_llm() -> BaseChatModel:
             )
         from langchain_groq import ChatGroq
 
+        default_model = "meta-llama/llama-4-scout-17b-16e-instruct" if require_vision else "llama-3.1-8b-instant"
+        model_name = os.environ.get("LLM_VISION_MODEL" if require_vision else "LLM_MODEL", default_model)
+
         return ChatGroq(
-            model=os.environ.get("LLM_MODEL", "llama-3.1-8b-instant"),
+            model=model_name,
             groq_api_key=api_key,
             temperature=0.4,
             max_tokens=2048,
