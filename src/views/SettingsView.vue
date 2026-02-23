@@ -4,9 +4,13 @@ import Card from '@/components/ui/Card.vue';
 import Input from '@/components/ui/Input.vue';
 import Separator from '@/components/ui/Separator.vue';
 import Switch from '@/components/ui/Switch.vue';
+import { useNotifications } from '@/composables/useNotifications';
+import { shareService } from '@/services/provider';
 import { useAuthStore } from '@/stores/auth';
 import { useFlashcardStore } from '@/stores/flashcard';
-import { Database, LogOut, Settings as SettingsIcon, Smartphone, User, Volume2, Zap } from 'lucide-vue-next';
+import type { DeckShare } from '@/types/flashcard';
+import { ClipboardCopy, Database, Link2, Loader2, LogOut, Settings as SettingsIcon, Share2, Smartphone, Trash2, User, Volume2, Zap } from 'lucide-vue-next';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const store = useFlashcardStore();
@@ -76,6 +80,64 @@ function toggleDarkMode(value: boolean) {
   store.updateSettings({ darkMode: value });
   document.documentElement.classList.toggle('dark', value);
 }
+
+// ── My Shares ──────────────────────────────────────────────
+const { success, error: showError } = useNotifications();
+const myShares = ref<DeckShare[]>([]);
+const loadingShares = ref(false);
+
+async function loadMyShares() {
+  loadingShares.value = true;
+  try {
+    myShares.value = await shareService.getMyShares();
+  } catch {
+    showError('Erro ao carregar compartilhamentos');
+  } finally {
+    loadingShares.value = false;
+  }
+}
+
+function getDeckName(deckId: string): string {
+  const deck = store.decks.find(d => d.id === deckId);
+  return deck?.name ?? 'Baralho removido';
+}
+
+function getShareUrl(token: string): string {
+  return `${window.location.origin}/shared/${token}`;
+}
+
+function getPermissionLabel(permission: string): string {
+  switch (permission) {
+    case 'read': return 'Leitura';
+    case 'write': return 'Edição';
+    case 'admin': return 'Admin';
+    default: return permission;
+  }
+}
+
+async function handleCopyShareLink(token: string) {
+  try {
+    await navigator.clipboard.writeText(getShareUrl(token));
+    success('Link copiado!');
+  } catch {
+    showError('Erro ao copiar link');
+  }
+}
+
+async function handleDeactivateShare(shareId: string) {
+  if (!confirm('Desativar este link? Todos os usuários perderão o acesso.')) return;
+  try {
+    await shareService.deactivateShare(shareId);
+    myShares.value = myShares.value.filter(s => s.id !== shareId);
+    success('Link desativado!');
+  } catch {
+    showError('Erro ao desativar link');
+  }
+}
+
+onMounted(() => {
+  loadMyShares();
+});
 </script>
 
 <template>
@@ -287,6 +349,78 @@ function toggleDarkMode(value: boolean) {
           <Card class="p-6 bg-muted/30 border-none shadow-none text-center">
             <p class="text-foreground font-semibold">Ultra Focus v1.0.0</p>
             <p class="mt-1 text-sm text-muted-foreground">Sistema de Aprendizado Acelerado</p>
+          </Card>
+
+          <!-- My Shares -->
+          <Card class="p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <Share2 class="w-5 h-5 text-primary" />
+              <h2 class="text-lg font-semibold text-foreground">
+                Meus Compartilhamentos
+              </h2>
+            </div>
+
+            <div
+              v-if="loadingShares"
+              class="flex items-center justify-center py-6"
+            >
+              <Loader2 class="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+
+            <div
+              v-else-if="myShares.length === 0"
+              class="text-center py-6"
+            >
+              <Link2 class="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+              <p class="text-sm text-muted-foreground">
+                Nenhum compartilhamento ativo
+              </p>
+            </div>
+
+            <div
+              v-else
+              class="space-y-3"
+            >
+              <div
+                v-for="share in myShares"
+                :key="share.id"
+                class="p-3 rounded-lg bg-muted/30 border border-border"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-foreground truncate">
+                      {{ getDeckName(share.deckId) }}
+                    </p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {{ getPermissionLabel(share.permission) }}
+                      </span>
+                      <span class="text-xs text-muted-foreground">
+                        {{ share.accessCount }} {{ share.accessCount === 1 ? 'acesso' : 'acessos' }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      class="h-8 w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                      title="Copiar Link"
+                      @click="handleCopyShareLink(share.shareToken)"
+                    >
+                      <ClipboardCopy class="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    <button
+                      type="button"
+                      class="h-8 w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                      title="Desativar"
+                      @click="handleDeactivateShare(share.id)"
+                    >
+                      <Trash2 class="w-4 h-4 text-destructive" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </Card>
         </div>
       </div>

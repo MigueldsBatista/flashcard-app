@@ -61,6 +61,12 @@ const routes = [
     path: '/register',
     name: 'register',
     component: () => import('@/views/RegisterView.vue')
+  },
+  {
+    path: '/shared/:token',
+    name: 'shared',
+    component: () => import('@/views/SharedDeckView.vue'),
+    props: true
   }
 ];
 
@@ -71,13 +77,24 @@ const router = createRouter({
 
 import { supabase } from '@/lib/supabase';
 
-router.beforeEach(async (to, from, next) => {
+const publicRoutes = ['login', 'register', 'shared'];
+
+router.beforeEach(async (to, _from, next) => {
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (to.name !== 'login' && to.name !== 'register' && !session) {
-    next({ name: 'login' });
+  const isPublicRoute = publicRoutes.includes(to.name as string);
+
+  if (!isPublicRoute && !session) {
+    // Redirect to login with returnUrl for shared links
+    next({ name: 'login', query: { returnUrl: to.fullPath } });
   } else if ((to.name === 'login' || to.name === 'register') && session) {
-    next({ name: 'home' });
+    // If authenticated and accessing login/register, check returnUrl
+    const returnUrl = to.query.returnUrl as string;
+    if (returnUrl) {
+      next(returnUrl);
+    } else {
+      next({ name: 'home' });
+    }
   } else {
     next();
   }

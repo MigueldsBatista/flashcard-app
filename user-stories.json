@@ -107,5 +107,112 @@
         "points": 3,
         "priority": "medium",
         "passing": false
+    },
+    {
+        "id": "US-008",
+        "name": "Geração de Link Público de Compartilhamento",
+        "description": "Como dono de um baralho, quero gerar um link público único para compartilhar meu baralho com outras pessoas, para que qualquer pessoa com o link possa acessar os flashcards sem precisar de convite manual.",
+        "acceptance_criteria": [
+            "Dado que o usuário está na tela de detalhes de um baralho, quando clicar no botão 'Compartilhar', então um modal/dialog de compartilhamento é exibido",
+            "O modal exibe um link público no formato '/shared/{token}' onde {token} é um UUID v4 único e não-guessável",
+            "O link é gerado sob demanda (lazy) — só é criado no banco quando o usuário clica em 'Gerar Link' pela primeira vez",
+            "Se o baralho já possui um link ativo, o modal exibe o link existente ao invés de criar um novo",
+            "Um botão 'Copiar Link' copia a URL completa para a área de transferência e exibe feedback visual (toast/tooltip) confirmando a cópia",
+            "O link gerado inclui o domínio completo da aplicação (ex: https://ultrafocus.app/shared/{token})",
+            "O link permanece válido indefinidamente até que o dono o revogue explicitamente"
+        ],
+        "points": 5,
+        "priority": "high",
+        "passing": false
+    },
+    {
+        "id": "US-009",
+        "name": "Gerenciamento de Permissões de Compartilhamento",
+        "description": "Como dono de um baralho compartilhado, quero definir o nível de permissão que os usuários com acesso ao link terão, para que eu tenha controle granular sobre o que podem fazer com meu conteúdo.",
+        "acceptance_criteria": [
+            "O modal de compartilhamento exibe um seletor de permissão com as opções: 'Somente Leitura', 'Pode Editar' e 'Pode Editar e Adicionar'",
+            "Dado permissão 'Somente Leitura' (read): o visitante pode visualizar todos os cards do baralho, iniciar sessões de estudo, mas NÃO pode editar, adicionar ou excluir cards",
+            "Dado permissão 'Pode Editar' (write): o visitante pode fazer tudo de 'Somente Leitura' MAIS editar o conteúdo (frente/verso) de cards existentes",
+            "Dado permissão 'Pode Editar e Adicionar' (admin): o visitante pode fazer tudo de 'Pode Editar' MAIS adicionar novos cards e excluir cards existentes",
+            "A permissão padrão ao gerar um novo link é 'Somente Leitura'",
+            "O dono pode alterar a permissão a qualquer momento; a mudança reflete imediatamente para todos que acessarem o link",
+            "A alteração de permissão NÃO invalida o link existente — apenas muda o que o visitante pode fazer"
+        ],
+        "points": 8,
+        "priority": "high",
+        "passing": false
+    },
+    {
+        "id": "US-010",
+        "name": "Acesso e Estudo de Baralho Compartilhado",
+        "description": "Como usuário autenticado que recebeu um link de compartilhamento, quero acessar o baralho compartilhado e estudar os flashcards, para que eu possa aprender o conteúdo sem precisar recriá-lo manualmente.",
+        "acceptance_criteria": [
+            "Dado que o usuário autenticado acessa a URL '/shared/{token}', quando o token é válido, então o baralho é exibido com o nome, descrição, ícone e contagem de cards",
+            "Dado que o usuário NÃO está autenticado, ele é redirecionado para a tela de login/cadastro com um parâmetro returnUrl='/shared/{token}' para que, após autenticar, seja levado automaticamente ao baralho compartilhado",
+            "Dado que o usuário está autenticado, sua sessão de estudo e progresso SRS são salvos normalmente vinculados à sua conta",
+            "Dado que o token é inválido ou foi revogado, o usuário vê uma página de erro amigável com a mensagem 'Este link de compartilhamento não existe ou foi desativado' e um botão para voltar à home",
+            "A interface exibe claramente que o baralho é compartilhado (badge 'Compartilhado por @{username}') para evitar confusão com baralhos próprios",
+            "Os botões de edição/exclusão são exibidos ou ocultados de acordo com a permissão definida pelo dono (US-009)",
+            "A página compartilhada carrega em menos de 2 segundos em conexão 3G"
+        ],
+        "points": 8,
+        "priority": "high",
+        "passing": false
+    },
+    {
+        "id": "US-011",
+        "name": "Revogação e Gerenciamento de Links Compartilhados",
+        "description": "Como dono de um baralho, quero poder revogar um link de compartilhamento e visualizar todos os meus baralhos compartilhados, para que eu mantenha o controle sobre quem acessa meu conteúdo.",
+        "acceptance_criteria": [
+            "O modal de compartilhamento exibe um botão 'Desativar Link' quando o baralho já possui um link ativo",
+            "Ao clicar em 'Desativar Link', um dialog de confirmação é exibido com a mensagem 'Tem certeza? Todas as pessoas com este link perderão o acesso imediatamente.'",
+            "Após confirmação, o link é marcado como inativo no banco (soft delete) e acessá-lo redireciona para a tela de erro (US-010)",
+            "O dono pode gerar um novo link para o mesmo baralho após revogar o anterior (o novo link terá um token diferente)",
+            "Na tela de configurações ou dashboard, existe uma seção 'Meus Compartilhamentos' que lista todos os baralhos com links ativos, exibindo: nome do baralho, permissão atual, data de criação do link e número de acessos únicos",
+            "Cada item da lista possui ações rápidas: 'Copiar Link', 'Alterar Permissão' e 'Desativar'"
+        ],
+        "points": 5,
+        "priority": "medium",
+        "passing": false
+    },
+    {
+        "id": "US-012",
+        "name": "Clonagem de Baralho Compartilhado (Fork)",
+        "description": "Como usuário autenticado que está visualizando um baralho compartilhado, quero poder clonar (fork) o baralho inteiro para minha conta, para que eu tenha minha própria cópia independente que posso editar e personalizar livremente.",
+        "acceptance_criteria": [
+            "Dado que o usuário está autenticado e visualiza um baralho compartilhado, quando clicar no botão 'Salvar na Minha Biblioteca', então todos os cards são copiados para um novo baralho na conta do usuário",
+            "O baralho clonado tem o nome '{nome_original} (cópia)' e mantém todo o conteúdo dos cards sem nenhum dado de progresso SRS (interval, ease_factor, repetitions são resetados para os valores padrão)",
+            "O baralho clonado é completamente independente — edições no clone NÃO afetam o baralho original e vice-versa",
+            "Uma clonagem de até 200 cards completa em menos de 5 segundos",
+            "Após a clonagem, o usuário é redirecionado para o baralho recém-criado na sua biblioteca com uma notificação de sucesso"
+        ],
+        "points": 5,
+        "priority": "medium",
+        "passing": false
+    },
+    {
+        "id": "US-013",
+        "name": "Políticas RLS de Segurança para Compartilhamento (Supabase)",
+        "description": "Como desenvolvedor, quero que todas as operações de compartilhamento sejam protegidas por políticas de Row Level Security (RLS) no Supabase, para que nenhum usuário consiga acessar, modificar ou excluir dados além do que sua permissão permite — mesmo manipulando requisições diretamente.",
+        "acceptance_criteria": [
+            "A tabela 'deck_shares' é criada com as colunas: id (uuid PK), deck_id (FK → decks.id), owner_id (FK → auth.users.id), share_token (uuid UNIQUE NOT NULL), permission ('read' | 'write' | 'admin'), is_active (boolean DEFAULT true), created_at (timestamptz), access_count (integer DEFAULT 0)",
+            "RLS está habilitado na tabela 'deck_shares' com force_row_level_security = true",
+            "Política SELECT em 'deck_shares': qualquer usuário autenticado pode ler um registro se is_active = true (necessário para resolver o token do link compartilhado)",
+            "Política INSERT em 'deck_shares': apenas o dono do baralho pode criar um share (auth.uid() = owner_id AND deck_id pertence ao auth.uid() via subquery em decks)",
+            "Política UPDATE em 'deck_shares': apenas o owner_id pode alterar permission ou is_active do seu próprio share",
+            "Política DELETE em 'deck_shares': apenas o owner_id pode excluir seus próprios registros de compartilhamento",
+            "Política SELECT em 'cards' (compartilhamento): um usuário autenticado pode ler cards de um baralho se existir um registro em deck_shares com deck_id correspondente, is_active = true (OR se o card pertence ao próprio usuário, mantendo a política existente)",
+            "Política UPDATE em 'cards' (compartilhamento): um usuário autenticado pode editar cards de um baralho compartilhado SOMENTE se o deck_shares correspondente tem permission IN ('write', 'admin')",
+            "Política INSERT em 'cards' (compartilhamento): um usuário autenticado pode adicionar cards a um baralho compartilhado SOMENTE se o deck_shares correspondente tem permission = 'admin'",
+            "Política DELETE em 'cards' (compartilhamento): um usuário autenticado pode excluir cards de um baralho compartilhado SOMENTE se o deck_shares correspondente tem permission = 'admin'",
+            "Política SELECT em 'decks' (compartilhamento): um usuário autenticado pode ler um deck se existir um deck_shares ativo para aquele deck (OR se o deck pertence ao próprio usuário)",
+            "Dado que um usuário tenta acessar um baralho compartilhado via API direta (sem token válido ou com link revogado), a query retorna 0 linhas (não erro 403, comportamento padrão do RLS)",
+            "Dado que um usuário com permissão 'read' tenta fazer UPDATE/INSERT/DELETE em cards via API direta, a operação é silenciosamente bloqueada pelo RLS",
+            "Todas as políticas utilizam subqueries otimizadas com EXISTS ao invés de IN para evitar degradação de performance em tabelas grandes",
+            "Testes de segurança validam que: (1) usuário A não acessa baralho de B sem link, (2) link revogado bloqueia acesso, (3) permissão 'read' bloqueia escrita, (4) permissão 'write' bloqueia exclusão/adição de cards"
+        ],
+        "points": 13,
+        "priority": "high",
+        "passing": false
     }
 ]

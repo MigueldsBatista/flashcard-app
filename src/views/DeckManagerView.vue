@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ShareDeckDialog from '@/components/ShareDeckDialog.vue';
 import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
 import Dialog from '@/components/ui/Dialog.vue';
@@ -8,7 +9,7 @@ import Textarea from '@/components/ui/Textarea.vue';
 import { useDeckIcons } from '@/composables/useDeckIcons';
 import { useFlashcardStore } from '@/stores/flashcard';
 import type { Deck } from '@/types/flashcard';
-import { ChevronDown, ChevronRight, Edit, FolderOpen, FolderPlus, Trash2 } from 'lucide-vue-next';
+import { ChevronDown, ChevronRight, Edit, FolderOpen, FolderPlus, Share2, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -23,6 +24,8 @@ const newDeckDescription = ref('');
 const newDeckColor = ref('#3B82F6');
 const newDeckIcon = ref('BookOpen');
 const showIconPicker = ref(false);
+const sharingDeck = ref<Deck | null>(null);
+const showShareDialog = ref(false);
 
 const colorOptions = [
   { name: 'Azul', value: '#3B82F6' },
@@ -92,6 +95,11 @@ function handleDeleteDeck(deck: Deck) {
   if (confirm(`Tem certeza que deseja excluir "${deck.name}"?`)) {
     store.deleteDeck(deck.id);
   }
+}
+
+function handleShareDeck(deck: Deck) {
+  sharingDeck.value = deck;
+  showShareDialog.value = true;
 }
 </script>
 
@@ -301,17 +309,25 @@ function handleDeleteDeck(deck: Deck) {
 
                 <div class="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    variant="ghost"
-                    size="sm"
-                    class="h-10 w-10 md:h-8 md:w-8 p-0"
+                    type="button"
+                    class="h-10 w-10 md:h-8 md:w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                    title="Compartilhar"
+                    @click.stop="handleShareDeck(deck)"
+                  >
+                    <Share2 class="w-5 h-5 md:w-4 md:h-4 text-primary" />
+                  </button>
+                  <button
+                    type="button"
+                    class="h-10 w-10 md:h-8 md:w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                    title="Editar"
                     @click.stop="handleEditDeck(deck)"
                   >
                     <Edit class="w-5 h-5 md:w-4 md:h-4" />
                   </button>
                   <button
-                    variant="ghost"
-                    size="sm"
-                    class="h-10 w-10 md:h-8 md:w-8 p-0"
+                    type="button"
+                    class="h-10 w-10 md:h-8 md:w-8 p-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                    title="Excluir"
                     @click.stop="handleDeleteDeck(deck)"
                   >
                     <Trash2 class="w-5 h-5 md:w-4 md:h-4 text-destructive" />
@@ -336,6 +352,13 @@ function handleDeleteDeck(deck: Deck) {
         </template>
       </div>
     </div>
+
+    <!-- Share Dialog -->
+    <ShareDeckDialog
+      :deck="sharingDeck"
+      :open="showShareDialog"
+      @update:open="showShareDialog = $event"
+    />
 
     <!-- Floating Action Button - hidden on desktop -->
     <Button

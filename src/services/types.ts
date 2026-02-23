@@ -5,7 +5,7 @@
  * Nenhuma dependência de framework — apenas tipos do domínio.
  */
 
-import type { Card, CardContent, Deck, StudySession } from '@/types/flashcard';
+import type { Card, CardContent, Deck, DeckShare, SharePermission, StudySession } from '@/types/flashcard';
 
 // ── Deck Service ────────────────────────────────────────────
 
@@ -55,4 +55,25 @@ export interface GeneratedCard {
 export interface IAIGeneratorService {
   generateFromImage(image: File, options?: GenerateOptions): Promise<GeneratedCard[]>;
   generateFromText(text: string, options?: GenerateOptions): Promise<GeneratedCard[]>;
+}
+
+// ── Share Service ───────────────────────────────────────────
+
+export interface SharedDeckData {
+  deck: Deck;
+  cards: Card[];
+  share: DeckShare;
+  ownerUsername: string | null;
+}
+
+export interface IShareService {
+  getShareByDeckId(deckId: string): Promise<DeckShare | null>;
+  getShareByToken(token: string): Promise<DeckShare | null>;
+  createShare(deckId: string): Promise<DeckShare>;
+  updatePermission(shareId: string, permission: SharePermission): Promise<void>;
+  deactivateShare(shareId: string): Promise<void>;
+  getMyShares(): Promise<DeckShare[]>;
+  incrementAccessCount(shareId: string): Promise<void>;
+  cloneDeck(deckId: string, deckName: string): Promise<Deck>;
+  getSharedDeckWithCards(token: string): Promise<SharedDeckData>;
 }

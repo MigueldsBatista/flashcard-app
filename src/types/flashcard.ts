@@ -87,3 +87,16 @@ export interface UserSettings {
   hapticFeedback: boolean;
   autoPlayAudio: boolean;
 }
+
+export type SharePermission = 'read' | 'write' | 'admin';
+
+export interface DeckShare {
+  id: string;
+  deckId: string;
+  ownerId: string;
+  shareToken: string;
+  permission: SharePermission;
+  isActive: boolean;
+  createdAt: Date;
+  accessCount: number;
+}
