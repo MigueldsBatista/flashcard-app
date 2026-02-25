@@ -2,6 +2,7 @@
 import CardRenderer from '@/components/CardRenderer.vue';
 import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
+import LoadingState from '@/components/ui/LoadingState.vue';
 import Progress from '@/components/ui/Progress.vue';
 import { useNotifications } from '@/composables/useNotifications';
 import { useStudySession } from '@/composables/useStudySession';
@@ -10,7 +11,7 @@ import { useFlashcardStore } from '@/stores/flashcard';
 import type { CardDifficulty } from '@/types/flashcard';
 import { useEventListener } from '@vueuse/core';
 import { ArrowLeft, Calendar, CheckCircle2, RotateCcw } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
@@ -44,8 +45,8 @@ const difficultyButtons = [
   { label: 'Fácil', value: 'easy' as CardDifficulty, color: 'bg-success hover:bg-success-hover', time: '7d' }
 ];
 
-onMounted(() => {
-  let currentContextId = '';
+function init() {
+  let currentContextId = 'random';
   if (deckId.value) {
     currentContextId = `deck:${deckId.value}`;
     store.startStudySession(deckId.value);
@@ -54,6 +55,12 @@ onMounted(() => {
     currentContextId = `decks:${deckIds.join(',')}`;
     if (deckIds[0]) {
       store.startStudySession(deckIds[0]);
+    }
+  } else {
+    currentContextId = 'random';
+    const firstDeck = store.decks[0];
+    if (firstDeck) {
+      store.startStudySession(firstDeck.id);
     }
   }
 
@@ -71,6 +78,19 @@ onMounted(() => {
     const newCards = getNewCards(filteredCards, store.settings.dailyNewCardLimit);
     return prioritizeCards([...dueCards, ...newCards]);
   });
+}
+
+onMounted(() => {
+  if (store.loading) {
+    const unwatch = watch(() => store.loading, (isLoading) => {
+      if (!isLoading) {
+        init();
+        unwatch();
+      }
+    });
+  } else {
+    init();
+  }
 });
 
 useEventListener('keydown', handleKeyPress);
@@ -151,9 +171,17 @@ function formatCooldown(date: Date | null): string {
 </script>
 
 <template>
+  <!-- Loading State -->
+  <div
+    v-if="store.loading"
+    class="min-h-screen bg-background flex items-center justify-center p-4"
+  >
+    <LoadingState message="Preparando sessão de estudos..." />
+  </div>
+
   <!-- Session Complete -->
   <div
-    v-if="isComplete"
+    v-else-if="isComplete"
     class="min-h-screen bg-background flex items-center justify-center p-4"
   >
     <Card class="p-6 sm:p-8 max-w-md w-full text-center">

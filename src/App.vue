@@ -6,20 +6,21 @@ import { useRoute, useRouter } from 'vue-router';
 
 // Components
 import BottomNav from '@/components/BottomNav.vue';
-import Toast from '@/components/Toast.vue';
 import NavigationDrawer from '@/components/NavigationDrawer.vue';
+import Toast from '@/components/Toast.vue';
 
 const route = useRoute();
 const router = useRouter();
 const store = useFlashcardStore();
 const authStore = useAuthStore();
 
+if (authStore.user) {
+  store.fetchAll();
+}
+
 // Apply dark mode on mount
-onMounted(async () => {
+onMounted(() => {
   document.documentElement.classList.toggle('dark', store.settings.darkMode);
-  if (authStore.user) {
-    await store.fetchAll();
-  }
 });
 
 // Watch for dark mode changes
