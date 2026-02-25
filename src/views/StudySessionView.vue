@@ -4,12 +4,13 @@ import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
 import Progress from '@/components/ui/Progress.vue';
 import { useNotifications } from '@/composables/useNotifications';
+import { useStudySession } from '@/composables/useStudySession';
 import { getDueCards, getNewCards, prioritizeCards } from '@/services/spaced-repetition';
 import { useFlashcardStore } from '@/stores/flashcard';
-import type { CardDifficulty, Card as FlashCard } from '@/types/flashcard';
+import type { CardDifficulty } from '@/types/flashcard';
 import { useEventListener } from '@vueuse/core';
 import { ArrowLeft, Calendar, CheckCircle2, RotateCcw } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
@@ -19,22 +20,22 @@ const { success } = useNotifications();
 
 const deckId = computed(() => route.params.deckId as string | undefined);
 
-const currentCardIndex = ref(0);
-const showAnswer = ref(false);
-const studiedCount = ref(0);
-const correctCount = ref(0);
-const isAnimating = ref(false);
-const animationClass = ref('');
-
-// Snapshot of cards for this session (frozen on mount so reviews don't shift the list)
-const studyCards = ref<FlashCard[]>([]);
-
-const currentCard = computed(() => studyCards.value[currentCardIndex.value]);
-const progress = computed(() => {
-  return studyCards.value.length > 0
-    ? ((currentCardIndex.value + 1) / studyCards.value.length) * 100
-    : 0;
-});
+const {
+  currentCard,
+  currentCardIndex,
+  studyCards,
+  studiedCount,
+  correctCount,
+  showAnswer,
+  isAnimating,
+  animationClass,
+  progress,
+  isComplete,
+  initializeSession,
+  handleReveal,
+  handleReview: reviewWithAnimation,
+  clearSession
+} = useStudySession();
 
 const difficultyButtons = [
   { label: 'Esqueci', value: 'forgot' as CardDifficulty, color: 'bg-destructive hover:bg-destructive-hover', time: '10min' },
@@ -44,28 +45,32 @@ const difficultyButtons = [
 ];
 
 onMounted(() => {
-  // Snapshot the cards for this session so reviews don't shift the list
-  let filteredCards = store.cards;
-
+  let currentContextId = '';
   if (deckId.value) {
-    filteredCards = store.cards.filter(card => card.deckId === deckId.value);
-  } else if (route.query.decks) {
-    const deckIds = (route.query.decks as string).split(',');
-    filteredCards = store.cards.filter(card => deckIds.includes(card.deckId));
-  }
-
-  const dueCards = getDueCards(filteredCards);
-  const newCards = getNewCards(filteredCards, store.settings.dailyNewCardLimit);
-  studyCards.value = prioritizeCards([...dueCards, ...newCards]);
-
-  if (deckId.value) {
+    currentContextId = `deck:${deckId.value}`;
     store.startStudySession(deckId.value);
   } else if (route.query.decks) {
     const deckIds = (route.query.decks as string).split(',');
+    currentContextId = `decks:${deckIds.join(',')}`;
     if (deckIds[0]) {
       store.startStudySession(deckIds[0]);
     }
   }
+
+  initializeSession(currentContextId, () => {
+    let filteredCards = store.cards;
+
+    if (deckId.value) {
+      filteredCards = store.cards.filter(card => card.deckId === deckId.value);
+    } else if (route.query.decks) {
+      const deckIds = (route.query.decks as string).split(',');
+      filteredCards = store.cards.filter(card => deckIds.includes(card.deckId));
+    }
+
+    const dueCards = getDueCards(filteredCards);
+    const newCards = getNewCards(filteredCards, store.settings.dailyNewCardLimit);
+    return prioritizeCards([...dueCards, ...newCards]);
+  });
 });
 
 useEventListener('keydown', handleKeyPress);
@@ -83,19 +88,15 @@ function handleKeyPress(e: KeyboardEvent) {
     handleReveal();
   } else if (showAnswer.value) {
     switch (e.key) {
-      case '1': handleReview('forgot'); break;
-      case '2': handleReview('hard'); break;
-      case '3': handleReview('good'); break;
-      case '4': handleReview('easy'); break;
+      case '1': handleReviewWrapper('forgot'); break;
+      case '2': handleReviewWrapper('hard'); break;
+      case '3': handleReviewWrapper('good'); break;
+      case '4': handleReviewWrapper('easy'); break;
     }
   }
 }
 
-function handleReveal() {
-  showAnswer.value = true;
-}
-
-function handleReview(difficulty: CardDifficulty) {
+function handleReviewWrapper(difficulty: CardDifficulty) {
   if (!currentCard.value || isAnimating.value) return;
 
   // Trigger haptic feedback if supported
@@ -109,35 +110,15 @@ function handleReview(difficulty: CardDifficulty) {
     }
   }
 
+  // Record review in the database/store
   store.reviewCard(currentCard.value.id, difficulty);
-  studiedCount.value++;
 
-  if (difficulty !== 'forgot') {
-    correctCount.value++;
-  }
-
-  // Animate slide
-  isAnimating.value = true;
-  animationClass.value = difficulty === 'forgot' ? 'animate-slide-out-left' : 'animate-slide-out-right';
-
-  setTimeout(() => {
-    showAnswer.value = false;
-    animationClass.value = '';
-
-    if (currentCardIndex.value <= studyCards.value.length) {
-      currentCardIndex.value++;
-      animationClass.value = 'animate-slide-in-right';
-      setTimeout(() => {
-        animationClass.value = '';
-        isAnimating.value = false;
-      }, 300);
-    } else {
-      handleComplete();
-    }
-  }, 200);
+  reviewWithAnimation(difficulty, () => {
+    handleCompleteWrapper();
+  });
 }
 
-function handleComplete() {
+function handleCompleteWrapper() {
   if (store.settings.hapticFeedback && 'vibrate' in navigator) {
     navigator.vibrate([100, 50, 100, 50, 100]);
   }
@@ -146,16 +127,10 @@ function handleComplete() {
 
 async function handleEndStudy() {
   await store.endStudySession();
+  clearSession();
   success('Sessão concluída!');
   router.push('/');
 }
-
-const isComplete = computed(() => {
-
-  return !currentCard.value ||
-   (currentCardIndex.value >= studyCards.value.length && !showAnswer.value && studiedCount.value > 0);
-
-});
 
 function formatCooldown(date: Date | null): string {
   if (!date) return '';
@@ -292,7 +267,7 @@ function formatCooldown(date: Date | null): string {
             :key="btn.value"
             :class="[btn.color, 'text-white h-14 flex flex-col items-center justify-center gap-0.5 rounded-lg shadow-md transition-colors text-xs']"
             :disabled="isAnimating"
-            @click="handleReview(btn.value)"
+            @click="handleReviewWrapper(btn.value)"
           >
             <span class="opacity-80">{{ btn.time }}</span>
             <span class="font-semibold">{{ btn.label }}</span>

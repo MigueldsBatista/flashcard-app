@@ -1,13 +1,45 @@
+import { useAuthStore } from '@/stores/auth';
 import { useFlashcardStore } from '@/stores/flashcard';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Supabase
 // Mock Supabase
-vi.mock('@/lib/supabase', async () => {
-  const { mockSupabase } = await import('./supabase_mock');
+// Mock Supabase
+vi.mock('@/lib/supabase', () => {
   return {
-    supabase: mockSupabase
+    supabase: {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } } }),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+        onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } })
+      },
+      from: vi.fn((table) => {
+        return {
+          select: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({ data: [] }),
+          insert: vi.fn((data) => ({
+            select: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  id: 'test-id-' + Math.random().toString(36).substring(2, 9),
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  ...data
+                },
+                error: null
+              })
+            }))
+          })),
+          update: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue({ error: null })
+          })),
+          delete: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue({ error: null })
+          }))
+        };
+      })
+    }
   };
 });
 
@@ -23,6 +55,23 @@ vi.mock('@/lib/supabase', async () => {
 describe('Dashboard Feature', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    const authStore = useAuthStore();
+    // @ts-expect-error test mock
+    authStore.user = { id: 'test-user', email: 'test@example.com' };
+
+    if (typeof localStorage === 'undefined' || !localStorage.clear) {
+      const store: Record<string, string> = {};
+      global.localStorage = {
+        getItem: vi.fn((key: string) => store[key] || null),
+        setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+        removeItem: vi.fn((key: string) => { delete store[key]; }),
+        clear: vi.fn(() => {
+          for (const k in store) delete store[k];
+        }),
+        length: 0,
+        key: vi.fn()
+      } as unknown as Storage;
+    }
     localStorage.clear();
   });
 

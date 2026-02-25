@@ -214,5 +214,18 @@
         "points": 13,
         "priority": "high",
         "passing": true
+    },
+    {
+        "id": "US-014",
+        "name": "Criar Hub/Helper Central de Testes para Mocks",
+        "description": "Como desenvolvedor, quero que exista um helper centralizado para configurações de mocks comuns (como o mock do Supabase) nos testes, para não precisar repetir o mesmo objeto de mock complexo no início de cada arquivo de teste.",
+        "acceptance_criteria": [
+            "O mock do Supabase (supabase_mock.ts ou arquivo similar) deve ser exposto e reutilizável por padrão de forma global",
+            "As suites de testes (DashboardView.spec.ts, DeckManager.spec.ts, StudySession.spec.ts) usam uma função ou importam o helper em vez de declarar o mock de vi.mock inline e duplicado",
+            "O código duplicado do vi.mock('@/lib/supabase') é removido das 3 (ou mais) suites"
+        ],
+        "points": 2,
+        "priority": "medium",
+        "passing": false
     }
 ]
