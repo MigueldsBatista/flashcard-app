@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
 interface Props {
   value: number;
   max?: number;
@@ -10,7 +12,9 @@ const props = withDefaults(defineProps<Props>(), {
   class: ''
 });
 
-const percentage = Math.min(100, Math.max(0, (props.value / props.max) * 100));
+const percentage = computed(() =>
+  Math.min(100, Math.max(0, (props.value / props.max) * 100))
+);
 </script>
 
 <template>

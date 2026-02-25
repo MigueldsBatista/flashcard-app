@@ -124,7 +124,7 @@ function handleReview(difficulty: CardDifficulty) {
     showAnswer.value = false;
     animationClass.value = '';
 
-    if (currentCardIndex.value < studyCards.value.length - 1) {
+    if (currentCardIndex.value <= studyCards.value.length) {
       currentCardIndex.value++;
       animationClass.value = 'animate-slide-in-right';
       setTimeout(() => {
@@ -151,7 +151,10 @@ async function handleEndStudy() {
 }
 
 const isComplete = computed(() => {
-  return !currentCard.value || (currentCardIndex.value >= studyCards.value.length - 1 && !showAnswer.value && studiedCount.value > 0);
+
+  return !currentCard.value ||
+   (currentCardIndex.value >= studyCards.value.length && !showAnswer.value && studiedCount.value > 0);
+
 });
 
 function formatCooldown(date: Date | null): string {
