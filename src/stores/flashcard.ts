@@ -170,13 +170,12 @@ export const useFlashcardStore = defineStore('flashcard', () => {
       const newDeck = await deckService.create(deck);
       decks.value.push(newDeck);
       return newDeck;
-    } catch (err) {
-      console.error('addDeck error:', err);
+    } finally {
       return null;
     }
   }
 
-  async function updateDeck(id: string, updates: Partial<Deck>) {
+  async function updateDeck(id: string, updates: Partial<Deck>): Promise<void> {
     try {
       await deckService.update(id, updates);
       const index = decks.value.findIndex(deck => deck.id === id);

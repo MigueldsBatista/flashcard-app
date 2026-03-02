@@ -37,18 +37,6 @@ const dialogOpen = ref(false);
 const hasImage = computed(() => !!imageData.value);
 const canSave = computed(() => hasImage.value && occlusions.value.length > 0);
 
-function clearImage() {
-  imageData.value = '';
-  occlusions.value = [];
-  imageElement.value = null;
-  imageLoaded.value = false;
-  emit('update:imageData', '');
-  emit('update:occlusions', []);
-  if (fileInputRef.value) {
-    fileInputRef.value.value = '';
-  }
-}
-
 function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -85,10 +73,7 @@ function loadImageAndSetupCanvas() {
     nextTick(() => setupCanvas());
   };
 
-  img.onerror = () => {
-    console.error('Failed to load image');
-    imageLoaded.value = false;
-  };
+  img.onerror = () => imageLoaded.value = false;
 
   img.src = imageData.value;
 }
