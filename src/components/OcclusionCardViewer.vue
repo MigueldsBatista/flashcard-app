@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import ImageOcclusionViewerDialog from '@/components/ImageOcclusionViewerDialog.vue';
 import { useOcclusionCanvas } from '@/composables/useOcclusionCanvas';
 import type { ImageOcclusion } from '@/types/flashcard';
+import { Maximize2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 
 interface Props {
@@ -29,7 +31,9 @@ const {
   redrawCanvas: baseRedraw
 } = useOcclusionCanvas(canvasRef, containerRef);
 
+// Shared state
 const revealedIds = ref<Set<string>>(new Set());
+const fullscreenOpen = ref(false);
 
 const VIEWER_OPTIONS = { maxHeight: 350 };
 
@@ -89,12 +93,25 @@ function handleCanvasClick(event: MouseEvent | TouchEvent) {
   }
 }
 
-function revealAll() {
+function handleRevealFromDialog(id: string) {
+  revealedIds.value.add(id);
+  redrawCanvas();
+
+  if (allRevealed.value) {
+    emit('allRevealed');
+  }
+}
+
+function handleRevealAllFromDialog() {
   props.occlusions.forEach(occ => {
     revealedIds.value.add(occ.id);
   });
   redrawCanvas();
   emit('allRevealed');
+}
+
+function revealAll() {
+  handleRevealAllFromDialog();
 }
 
 function resetRevealedState() {
@@ -133,7 +150,7 @@ onMounted(() => {
   <div class="space-y-3">
     <div
       ref="containerRef"
-      class="relative bg-muted rounded-lg overflow-hidden border border-border"
+      class="relative bg-muted rounded-lg overflow-hidden border border-border group"
     >
       <canvas
         ref="canvasRef"
@@ -144,6 +161,16 @@ onMounted(() => {
         @click="handleCanvasClick"
         @touchend="handleCanvasClick"
       />
+
+      <!-- Fullscreen expand button -->
+      <button
+        v-if="interactive"
+        class="absolute top-2 right-2 bg-background/80 backdrop-blur hover:bg-background text-foreground rounded-lg p-1.5 opacity-0 group-hover:opacity-100 sm:opacity-70 transition-opacity shadow-md"
+        title="Tela cheia"
+        @click.stop="fullscreenOpen = true"
+      >
+        <Maximize2 class="w-4 h-4" />
+      </button>
     </div>
 
     <!-- Reveal Status -->
@@ -159,5 +186,15 @@ onMounted(() => {
         Revelar todas
       </button>
     </div>
+
+    <!-- Fullscreen Viewer Dialog -->
+    <ImageOcclusionViewerDialog
+      v-model:open="fullscreenOpen"
+      :image-data="imageData"
+      :occlusions="occlusions"
+      :revealed-ids="revealedIds"
+      @reveal="handleRevealFromDialog"
+      @reveal-all="handleRevealAllFromDialog"
+    />
   </div>
 </template>
