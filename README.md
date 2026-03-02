@@ -17,7 +17,7 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
 ## 📸 Showcase
 
 <details>
-<summary><b>🖥️ Desktop Implementation</b></summary>
+<summary><b>🖥️ Desktop UI (Click Here)</b></summary>
 <br>
 
 ### Dashboard
@@ -27,12 +27,13 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
   <img src="media/desktop/dash_light.png" alt="Dashboard Light Mode" width="48%" />
 </div>
 
-### Decks & Cards
+### Decks & Study Sessions
 *Manage your learning materials and study sessions.*
 ![Decks Dark Mode](media/desktop/decks_dark.png)
 <div align="center">
-  <img src="media/desktop/cards_dark.png" alt="Cards Dark Mode" width="48%" />
-  <img src="media/desktop/text_preview_dark.png" alt="Text Preview Dark Mode" width="48%" />
+  <img src="media/desktop/cards_dark.png" alt="Cards Dark Mode" width="32%" />
+  <img src="media/desktop/text_preview_dark.png" alt="Text Preview Dark Mode" width="32%" />
+  <img src="media/desktop/study_session_text_dark.png" alt="Study Session Text" width="32%" />
 </div>
 
 ### Image Occlusion Editor
@@ -50,10 +51,37 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
 </details>
 
 <details>
-<summary><b>📱 Mobile Implementation</b></summary>
+<summary><b>📱 Mobile UI (Click Here)</b></summary>
 <br>
 
-*(Mobile screenshots coming soon!)*
+### Dashboard & Decks
+<div align="center">
+  <img src="media/mobile/dash_dark.png" alt="Dashboard Mobile" width="48%" />
+  <img src="media/mobile/decks_dark.png" alt="Decks Mobile" width="48%" />
+</div>
+
+### Study Sessions
+<div align="center">
+  <img src="media/mobile/study_session_text_dark.png" alt="Study Session Text" width="48%" />
+  <img src="media/mobile/study_session_occlusion_dark.png" alt="Study Session Occlusion" width="48%" />
+</div>
+
+### Image Occlusion
+<div align="center">
+  <img src="media/mobile/occlusion_dark.png" alt="Image Occlusion Mobile" width="48%" />
+  <img src="media/mobile/image_occlusion.gif" alt="Image Occlusion GIF Mobile" width="48%" />
+</div>
+
+### Features & Statistics
+<div align="center">
+  <img src="media/mobile/generate_with_ai_dark.png" alt="Generate with AI" width="48%" />
+  <img src="media/mobile/share_deck_dark.png" alt="Share Deck" width="48%" />
+</div>
+<br>
+<div align="center">
+  <img src="media/mobile/stats_dark.png" alt="Stats Activity" width="48%" />
+  <img src="media/mobile/stats_2_dark.png" alt="Stats Details" width="48%" />
+</div>
 
 </details>
 

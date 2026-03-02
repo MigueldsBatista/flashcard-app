@@ -129,8 +129,7 @@ class TestRateLimit(BaseAPITest):
         )
 
         with (
-            patch("api.services.generation.get_llm", return_value=mock_llm),
-            patch("api.services.generation.asyncio.sleep", new_callable=AsyncMock),
+            patch("api.modules.ai.get_llm", return_value=mock_llm),
         ):
             response = self.client.post(
                 "/api/generate",
@@ -150,7 +149,7 @@ class TestAIParseFailed(BaseAPITest):
         """When the LLM returns malformed JSON, route returns 500 AI_PARSE_FAILED."""
         mock_llm = self._make_llm_mock(response_text="this is not json at all {{{")
 
-        with patch("api.services.generation.get_llm", return_value=mock_llm):
+        with patch("api.modules.ai.get_llm", return_value=mock_llm):
             response = self.client.post(
                 "/api/generate",
                 data={"text": "word " * 20},
@@ -168,9 +167,11 @@ class TestMissingConfig(BaseAPITest):
     def test_missing_api_key_returns_500(self):
         """When GEMINI_API_KEY is absent, returns 500 MISSING_CONFIG."""
         env_override = {"LLM_PROVIDER": "gemini"}
-        env_remove = {"GEMINI_API_KEY": ""}
+        env_remove = {"GEMINI_API_KEY": "", "OPENAI_API_KEY": "", "GROQ_API_KEY": ""}
         with patch.dict(os.environ, {**env_override}, clear=False):
             os.environ.pop("GEMINI_API_KEY", None)
+            os.environ.pop("OPENAI_API_KEY", None)
+            os.environ.pop("GROQ_API_KEY", None)
             response = self.client.post(
                 "/api/generate",
                 data={"text": "word " * 20},
@@ -192,6 +193,8 @@ class TestErrorBodyShape(BaseAPITest):
     def test_missing_config_has_required_fields(self):
         with patch.dict(os.environ, {"LLM_PROVIDER": "gemini"}, clear=False):
             os.environ.pop("GEMINI_API_KEY", None)
+            os.environ.pop("OPENAI_API_KEY", None)
+            os.environ.pop("GROQ_API_KEY", None)
             response = self.client.post(
                 "/api/generate",
                 data={"text": "word " * 20},
