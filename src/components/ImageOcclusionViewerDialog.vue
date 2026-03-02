@@ -34,14 +34,24 @@ const {
   getPinchDistance
 } = useOcclusionCanvas(canvasRef, containerRef);
 
-// Zoom
+// Zoom + Pan state
 const zoom = ref(1);
+const panX = ref(0);
+const panY = ref(0);
 const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 4;
+const MAX_ZOOM = 5;
 
-// Touch state for pinch detection
+// Touch state
 const initialPinchDistance = ref<number | null>(null);
 const initialPinchZoom = ref(1);
+const initialPinchCenter = ref<{ x: number; y: number } | null>(null);
+const initialPinchPan = ref<{ x: number; y: number }>({ x: 0, y: 0 });
+
+// Drag-to-pan state
+const isDragging = ref(false);
+const dragStart = ref<{ x: number; y: number } | null>(null);
+const dragStartPan = ref<{ x: number; y: number }>({ x: 0, y: 0 });
+const hasDragged = ref(false); // distinguish between tap and drag
 
 function redrawCanvas() {
   baseRedraw(props.occlusions, {
@@ -50,10 +60,54 @@ function redrawCanvas() {
   });
 }
 
-// Initialize when opened
+// ── Zoom-to-point logic ──
+
+function zoomToPoint(newZoom: number, screenX: number, screenY: number) {
+  const container = containerRef.value;
+  if (!container) return;
+
+  const rect = container.getBoundingClientRect();
+  // Point relative to the container center
+  const cx = screenX - rect.left - rect.width / 2;
+  const cy = screenY - rect.top - rect.height / 2;
+
+  const oldZoom = zoom.value;
+  const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+
+  // Adjust pan so the point under cursor stays in place
+  panX.value = cx - (cx - panX.value) * (clampedZoom / oldZoom);
+  panY.value = cy - (cy - panY.value) * (clampedZoom / oldZoom);
+
+  zoom.value = clampedZoom;
+}
+
+function resetView() {
+  zoom.value = 1;
+  panX.value = 0;
+  panY.value = 0;
+}
+
+function zoomIn() {
+  const container = containerRef.value;
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  zoomToPoint(zoom.value + 0.5, rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+
+function zoomOut() {
+  const container = containerRef.value;
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  zoomToPoint(zoom.value - 0.5, rect.left + rect.width / 2, rect.top + rect.height / 2);
+  // If zoomed out to 1 or below, reset pan
+  if (zoom.value <= 1) { panX.value = 0; panY.value = 0; }
+}
+
+// ── Initialize ──
+
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
-    zoom.value = 1;
+    resetView();
     nextTick(() => {
       loadImageAndSetup(props.imageData, {
         containerPadding: 32,
@@ -63,31 +117,19 @@ watch(() => props.open, (isOpen) => {
   }
 }, { immediate: true });
 
-// Redraw when reveal state changes
 watch(() => props.revealedIds.size, () => {
   if (props.open) redrawCanvas();
 });
 
-// Click-to-reveal in fullscreen
-function handleCanvasClick(event: MouseEvent | TouchEvent) {
+// ── Click-to-reveal ──
+
+function tryRevealAt(screenX: number, screenY: number) {
   const canvas = canvasRef.value;
   if (!canvas) return;
 
   const rect = canvas.getBoundingClientRect();
-  let clientX: number, clientY: number;
-
-  if ('touches' in event) {
-    const touch = event.touches[0] || event.changedTouches[0];
-    if (!touch) return;
-    clientX = touch.clientX;
-    clientY = touch.clientY;
-  } else {
-    clientX = event.clientX;
-    clientY = event.clientY;
-  }
-
-  const x = (clientX - rect.left) / (canvasScale.value * zoom.value);
-  const y = (clientY - rect.top) / (canvasScale.value * zoom.value);
+  const x = (screenX - rect.left) / (canvasScale.value * zoom.value);
+  const y = (screenY - rect.top) / (canvasScale.value * zoom.value);
 
   const clickedOcclusion = props.occlusions.find(occ =>
     !props.revealedIds.has(occ.id) &&
@@ -103,41 +145,138 @@ function handleCanvasClick(event: MouseEvent | TouchEvent) {
   }
 }
 
-// Touch handlers for pinch zoom
+// ── Mouse handlers (desktop) ──
+
+function handleMouseDown(event: MouseEvent) {
+  if (zoom.value <= 1) return; // No pan needed at 100%
+  isDragging.value = true;
+  hasDragged.value = false;
+  dragStart.value = { x: event.clientX, y: event.clientY };
+  dragStartPan.value = { x: panX.value, y: panY.value };
+}
+
+function handleMouseMove(event: MouseEvent) {
+  if (!isDragging.value || !dragStart.value) return;
+
+  const dx = event.clientX - dragStart.value.x;
+  const dy = event.clientY - dragStart.value.y;
+
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+    hasDragged.value = true;
+  }
+
+  panX.value = dragStartPan.value.x + dx;
+  panY.value = dragStartPan.value.y + dy;
+}
+
+function handleMouseUp(event: MouseEvent) {
+  isDragging.value = false;
+  dragStart.value = null;
+
+  // If it was a simple click (no drag), try to reveal
+  if (!hasDragged.value) {
+    tryRevealAt(event.clientX, event.clientY);
+  }
+}
+
+function handleWheel(event: WheelEvent) {
+  event.preventDefault();
+  const delta = event.deltaY > 0 ? -0.15 : 0.15;
+  zoomToPoint(zoom.value + delta, event.clientX, event.clientY);
+
+  if (zoom.value <= 1) { panX.value = 0; panY.value = 0; }
+}
+
+// ── Touch handlers ──
+
 function handleTouchStart(event: TouchEvent) {
+  event.preventDefault();
+
+  // Two-finger pinch
   if (event.touches.length === 2) {
-    event.preventDefault();
+    isDragging.value = false;
     initialPinchDistance.value = getPinchDistance(event.touches);
     initialPinchZoom.value = zoom.value;
+    initialPinchPan.value = { x: panX.value, y: panY.value };
+    initialPinchCenter.value = {
+      x: (event.touches[0]!.clientX + event.touches[1]!.clientX) / 2,
+      y: (event.touches[0]!.clientY + event.touches[1]!.clientY) / 2
+    };
+    return;
+  }
+
+  // Single finger
+  if (event.touches.length === 1) {
+    isDragging.value = true;
+    hasDragged.value = false;
+    dragStart.value = { x: event.touches[0]!.clientX, y: event.touches[0]!.clientY };
+    dragStartPan.value = { x: panX.value, y: panY.value };
   }
 }
 
 function handleTouchMove(event: TouchEvent) {
-  if (event.touches.length === 2 && initialPinchDistance.value !== null) {
-    event.preventDefault();
+  event.preventDefault();
+
+  // Pinch zoom
+  if (event.touches.length === 2 && initialPinchDistance.value !== null && initialPinchCenter.value) {
     const currentDistance = getPinchDistance(event.touches);
     const scale = currentDistance / initialPinchDistance.value;
-    zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.value * scale));
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.value * scale));
+
+    const cx = initialPinchCenter.value.x;
+    const cy = initialPinchCenter.value.y;
+    const container = containerRef.value;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const relX = cx - rect.left - rect.width / 2;
+      const relY = cy - rect.top - rect.height / 2;
+
+      panX.value = relX - (relX - initialPinchPan.value.x) * (newZoom / initialPinchZoom.value);
+      panY.value = relY - (relY - initialPinchPan.value.y) * (newZoom / initialPinchZoom.value);
+    }
+
+    zoom.value = newZoom;
+    return;
+  }
+
+  // Single-finger drag to pan (only when zoomed)
+  if (event.touches.length === 1 && isDragging.value && dragStart.value && zoom.value > 1) {
+    const dx = event.touches[0]!.clientX - dragStart.value.x;
+    const dy = event.touches[0]!.clientY - dragStart.value.y;
+
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      hasDragged.value = true;
+    }
+
+    panX.value = dragStartPan.value.x + dx;
+    panY.value = dragStartPan.value.y + dy;
   }
 }
 
 function handleTouchEnd(event: TouchEvent) {
+  event.preventDefault();
+
+  // End pinch
   if (initialPinchDistance.value !== null) {
     initialPinchDistance.value = null;
+    initialPinchCenter.value = null;
+    if (zoom.value <= 1) { resetView(); }
+    return;
   }
+
+  // Tap to reveal (no drag)
+  if (isDragging.value && !hasDragged.value) {
+    const touch = event.changedTouches[0];
+    if (touch) {
+      tryRevealAt(touch.clientX, touch.clientY);
+    }
+  }
+
+  isDragging.value = false;
+  dragStart.value = null;
 }
 
-// Zoom controls
-function zoomIn() { zoom.value = Math.min(MAX_ZOOM, zoom.value + 0.25); }
-function zoomOut() { zoom.value = Math.max(MIN_ZOOM, zoom.value - 0.25); }
-function resetZoom() { zoom.value = 1; }
-
-function handleWheel(event: WheelEvent) {
-  if (!event.ctrlKey && !event.metaKey) return;
-  event.preventDefault();
-  const delta = event.deltaY > 0 ? -0.1 : 0.1;
-  zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom.value + delta));
-}
+// ── Keyboard & Resize ──
 
 function handleClose() {
   emit('update:open', false);
@@ -153,6 +292,9 @@ function handleResize() {
 function handleKeyDown(event: KeyboardEvent) {
   if (!props.open) return;
   if (event.key === 'Escape') handleClose();
+  if (event.key === '+' || event.key === '=') zoomIn();
+  if (event.key === '-') zoomOut();
+  if (event.key === '0') resetView();
 }
 
 watch(zoom, () => { redrawCanvas(); });
@@ -215,7 +357,7 @@ onUnmounted(() => {
                 variant="ghost"
                 size="sm"
                 class="px-2 py-1 text-xs font-medium text-muted-foreground min-w-12 text-center"
-                @click="resetZoom"
+                @click="resetView"
               >
                 {{ Math.round(zoom * 100) }}%
               </Button>
@@ -245,8 +387,16 @@ onUnmounted(() => {
         <!-- Canvas Area -->
         <div
           ref="containerRef"
-          class="flex-1 overflow-auto flex items-center justify-center p-4 touch-none"
-          @wheel="handleWheel"
+          class="flex-1 overflow-hidden flex items-center justify-center p-4"
+          :class="[zoom > 1 ? 'cursor-grab' : 'cursor-pointer', isDragging && zoom > 1 ? 'cursor-grabbing!' : '']"
+          @wheel.prevent="handleWheel"
+          @mousedown="handleMouseDown"
+          @mousemove="handleMouseMove"
+          @mouseup="handleMouseUp"
+          @mouseleave="handleMouseUp"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
         >
           <div
             v-if="!imageLoaded"
@@ -257,13 +407,17 @@ onUnmounted(() => {
 
           <div
             v-else
-            class="relative"
-            :style="{ transform: `scale(${zoom})`, transformOrigin: 'center center' }"
+            class="relative select-none"
+            :style="{
+              transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+              transformOrigin: 'center center',
+              transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+            }"
           >
             <!-- Zoom indicator -->
             <div
               v-if="zoom !== 1"
-              class="absolute -top-8 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur px-2 py-1 rounded text-xs text-muted-foreground flex items-center gap-1 z-10"
+              class="absolute -top-8 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur px-2 py-1 rounded text-xs text-muted-foreground flex items-center gap-1 z-10 pointer-events-none"
             >
               <ZoomIn class="w-3 h-3" />
               {{ Math.round(zoom * 100) }}%
@@ -271,11 +425,7 @@ onUnmounted(() => {
 
             <canvas
               ref="canvasRef"
-              class="block shadow-2xl rounded-lg cursor-pointer touch-none"
-              @click="handleCanvasClick"
-              @touchend.prevent="handleCanvasClick"
-              @touchstart="handleTouchStart"
-              @touchmove="handleTouchMove"
+              class="block shadow-2xl rounded-lg touch-none"
             />
           </div>
         </div>
@@ -283,7 +433,7 @@ onUnmounted(() => {
         <!-- Footer hint -->
         <div class="shrink-0 bg-background/90 backdrop-blur border-t border-border p-2 sm:p-3 safe-area-bottom">
           <p class="text-xs text-muted-foreground text-center">
-            Toque nas áreas ocultas para revelar · Use pinça para zoom
+            {{ zoom > 1 ? 'Arraste para navegar · ' : '' }}Toque nas áreas ocultas para revelar · Use pinça ou scroll para zoom
           </p>
         </div>
       </div>

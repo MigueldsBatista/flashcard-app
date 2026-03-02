@@ -29,7 +29,6 @@ const containerRef = ref<HTMLDivElement | null>(null);
 // Canvas composable
 const {
   imageLoaded,
-  canvasScale,
   loadImageAndSetup,
   setupCanvas,
   redrawCanvas: baseRedraw,
@@ -44,14 +43,18 @@ const localOcclusions = ref<ImageOcclusion[]>([]);
 const selectedOcclusionId = ref<string | null>(null);
 const occlusionColor = ref('#EF4444');
 
-// Zoom
+// Zoom + Pan
 const zoom = ref(1);
+const panX = ref(0);
+const panY = ref(0);
 const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 4;
+const MAX_ZOOM = 5;
 
 // Touch state for pinch detection
 const initialPinchDistance = ref<number | null>(null);
 const initialPinchZoom = ref(1);
+const initialPinchCenter = ref<{ x: number; y: number } | null>(null);
+const initialPinchPan = ref<{ x: number; y: number }>({ x: 0, y: 0 });
 const isTouchInteracting = ref(false);
 
 // Interaction modes
@@ -115,6 +118,8 @@ watch(() => props.open, (isOpen) => {
     localOcclusions.value = JSON.parse(JSON.stringify(props.occlusions));
     selectedOcclusionId.value = null;
     zoom.value = 1;
+    panX.value = 0;
+    panY.value = 0;
     clearHistory();
     commit();
     nextTick(() => {
@@ -149,6 +154,11 @@ function handleTouchStart(event: TouchEvent) {
     isInteracting.value = false;
     initialPinchDistance.value = getPinchDistance(event.touches);
     initialPinchZoom.value = zoom.value;
+    initialPinchPan.value = { x: panX.value, y: panY.value };
+    initialPinchCenter.value = {
+      x: (event.touches[0]!.clientX + event.touches[1]!.clientX) / 2,
+      y: (event.touches[0]!.clientY + event.touches[1]!.clientY) / 2
+    };
     return;
   }
 
@@ -161,10 +171,22 @@ function handleTouchStart(event: TouchEvent) {
 function handleTouchMove(event: TouchEvent) {
   event.preventDefault();
 
-  if (event.touches.length === 2 && initialPinchDistance.value !== null) {
+  if (event.touches.length === 2 && initialPinchDistance.value !== null && initialPinchCenter.value) {
     const currentDistance = getPinchDistance(event.touches);
     const scale = currentDistance / initialPinchDistance.value;
-    zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.value * scale));
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.value * scale));
+
+    // Zoom toward pinch center
+    const container = containerRef.value;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const cx = initialPinchCenter.value.x - rect.left - rect.width / 2;
+      const cy = initialPinchCenter.value.y - rect.top - rect.height / 2;
+      panX.value = cx - (cx - initialPinchPan.value.x) * (newZoom / initialPinchZoom.value);
+      panY.value = cy - (cy - initialPinchPan.value.y) * (newZoom / initialPinchZoom.value);
+    }
+
+    zoom.value = newZoom;
     return;
   }
 
@@ -339,15 +361,46 @@ function handleCancel() {
   emit('update:open', false);
 }
 
-function zoomIn() { zoom.value = Math.min(MAX_ZOOM, zoom.value + 0.25); }
-function zoomOut() { zoom.value = Math.max(MIN_ZOOM, zoom.value - 0.25); }
-function resetZoom() { zoom.value = 1; }
+function zoomToPoint(newZoom: number, screenX: number, screenY: number) {
+  const container = containerRef.value;
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  const cx = screenX - rect.left - rect.width / 2;
+  const cy = screenY - rect.top - rect.height / 2;
+  const oldZoom = zoom.value;
+  const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+  panX.value = cx - (cx - panX.value) * (clampedZoom / oldZoom);
+  panY.value = cy - (cy - panY.value) * (clampedZoom / oldZoom);
+  zoom.value = clampedZoom;
+}
+
+function zoomIn() {
+  const container = containerRef.value;
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  zoomToPoint(zoom.value + 0.5, rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+
+function zoomOut() {
+  const container = containerRef.value;
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  zoomToPoint(zoom.value - 0.5, rect.left + rect.width / 2, rect.top + rect.height / 2);
+  if (zoom.value <= 1) { panX.value = 0; panY.value = 0; }
+}
+
+function resetZoom() {
+  zoom.value = 1;
+  panX.value = 0;
+  panY.value = 0;
+}
 
 function handleWheel(event: WheelEvent) {
   if (!event.ctrlKey && !event.metaKey) return;
   event.preventDefault();
-  const delta = event.deltaY > 0 ? -0.1 : 0.1;
-  zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom.value + delta));
+  const delta = event.deltaY > 0 ? -0.15 : 0.15;
+  zoomToPoint(zoom.value + delta, event.clientX, event.clientY);
+  if (zoom.value <= 1) { panX.value = 0; panY.value = 0; }
 }
 
 function handleResize() {
@@ -483,7 +536,7 @@ onUnmounted(() => {
         <!-- Canvas Area -->
         <div
           ref="containerRef"
-          class="flex-1 overflow-auto flex items-center justify-center p-4 touch-none"
+          class="flex-1 overflow-hidden flex items-center justify-center p-4 touch-none"
           @wheel="handleWheel"
         >
           <div
@@ -495,13 +548,16 @@ onUnmounted(() => {
 
           <div
             v-else
-            class="relative"
-            :style="{ transform: `scale(${zoom})`, transformOrigin: 'center center' }"
+            class="relative select-none"
+            :style="{
+              transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+              transformOrigin: 'center center',
+            }"
           >
             <!-- Zoom indicator -->
             <div
               v-if="zoom !== 1"
-              class="absolute -top-8 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur px-2 py-1 rounded text-xs text-muted-foreground flex items-center gap-1 z-10"
+              class="absolute -top-8 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur px-2 py-1 rounded text-xs text-muted-foreground flex items-center gap-1 z-10 pointer-events-none"
             >
               <ZoomIn class="w-3 h-3" />
               {{ Math.round(zoom * 100) }}%
