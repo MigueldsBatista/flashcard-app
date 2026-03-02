@@ -7,9 +7,9 @@ from api.modules.exceptions import MissingConfigException
 from langchain_core.language_models import BaseChatModel
 
 
-def get_llm(require_vision: bool = False) -> BaseChatModel:
-    """Return a LangChain BaseChatModel selected by the LLM_PROVIDER env var."""
-    provider = os.environ.get("LLM_PROVIDER", "groq").lower()
+def get_llm(require_vision: bool = False, override_provider: str | None = None) -> BaseChatModel:
+    """Return a LangChain BaseChatModel selected by the LLM_PROVIDER env var or override."""
+    provider = override_provider.lower() if override_provider else os.environ.get("LLM_PROVIDER", "groq").lower()
 
     if provider == "gemini":
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -28,6 +28,7 @@ def get_llm(require_vision: bool = False) -> BaseChatModel:
             google_api_key=api_key,
             temperature=0.4,
             max_output_tokens=2048,
+            max_retries=0,
         )
 
     if provider == "openai":
@@ -47,6 +48,7 @@ def get_llm(require_vision: bool = False) -> BaseChatModel:
             openai_api_key=api_key,
             temperature=0.4,
             max_tokens=2048,
+            max_retries=0,
         )
         
     if provider == "groq":
@@ -66,6 +68,7 @@ def get_llm(require_vision: bool = False) -> BaseChatModel:
             groq_api_key=api_key,
             temperature=0.4,
             max_tokens=2048,
+            max_retries=0,
         )
 
     if provider == "fake":

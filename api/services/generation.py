@@ -50,8 +50,10 @@ def parse_ai_response(response_text: str) -> GenerationResponse:
         )
 
 
-async def call_llm_with_retry(llm, prompt: str, max_retries: int = 3) -> str:
-    """Call the LangChain LLM with retry logic for rate limits."""
+async def call_llm_with_retry(require_vision: bool, prompt: str) -> str:
+    """Implement failover provider mechanism to handle exact 429 quota exhaustion."""
+    from api.modules.ai import get_llm
+    import os
 
     prompt_chars = len(prompt)
     estimated_tokens = prompt_chars // 4
@@ -59,56 +61,87 @@ async def call_llm_with_retry(llm, prompt: str, max_retries: int = 3) -> str:
         f"📊 Prompt stats: {prompt_chars} chars, ~{estimated_tokens} estimated tokens"
     )
 
-    for attempt in range(max_retries):
+    primary_provider = os.environ.get("LLM_PROVIDER", "groq").lower()
+    
+    # Generate the fallback sequence based on what keys are available
+    available_providers = []
+    
+    # Try pushing primary provider first
+    if primary_provider == "gemini" and os.environ.get("GEMINI_API_KEY"):
+        available_providers.append("gemini")
+    elif primary_provider == "openai" and os.environ.get("OPENAI_API_KEY"):
+        available_providers.append("openai")
+    elif primary_provider == "groq" and os.environ.get("GROQ_API_KEY"):
+        available_providers.append("groq")
+
+    # Push fallbacks
+    if "groq" not in available_providers and os.environ.get("GROQ_API_KEY"):
+        available_providers.append("groq")
+    if "gemini" not in available_providers and os.environ.get("GEMINI_API_KEY"):
+        available_providers.append("gemini")
+    if "openai" not in available_providers and os.environ.get("OPENAI_API_KEY"):
+        available_providers.append("openai")
+
+    if not available_providers:
+        # Fallback to the default error handling of get_llm which raises MissingConfigException
+        available_providers = [primary_provider]
+
+    last_error = None
+
+    for provider in available_providers:
         try:
+            logger.info(f"🔄 Attempting LLM request using provider: {provider}")
+            llm = get_llm(require_vision=require_vision, override_provider=provider)
             message = HumanMessage(content=prompt)
+            
             response = await llm.ainvoke([message])
 
             response_text = (
                 response.content if hasattr(response, "content") else str(response)
             )
             response_chars = len(response_text) if response_text else 0
-            logger.info(f"✅ Response received: {response_chars} chars")
+            logger.info(f"✅ Response received via {provider}: {response_chars} chars")
 
             return response_text
 
         except (
-            RateLimitException,
             ExtractionFailedException,
             NoContentException,
             AIParseException,
-            GenerationFailedException,
             MissingConfigException,
         ):
-            # Let domain exceptions propagate immediately — no retry
+            # Let domain exceptions propagate immediately
             raise
 
         except Exception as e:
             error_str = str(e)
 
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                # Gemini free tier has strict limits (15 RPM). Wait longer.
-                wait_time = (attempt + 1) * 15
                 logger.warning(
-                    f"⚠️ Rate limit hit (attempt {attempt + 1}/{max_retries}). "
-                    f"Waiting {wait_time}s..."
+                    f"⚠️ Rate limit hit with {provider}. Failing over to next."
                 )
-
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    raise RateLimitException(
-                        "API com muitas requisições. Aguarde alguns segundos e tente novamente.",
-                        suggestion="Espere 30 segundos antes de tentar novamente",
-                    )
+                last_error = e
+                continue
             else:
-                raise GenerationFailedException(
-                    f"Erro na geração: {e}",
-                    suggestion="Tente novamente em alguns instantes",
-                )
+                logger.error(f"❌ Unexpected error from {provider}: {error_str}. Failing over.")
+                last_error = e
+                continue
 
+    # If we exhausted all fallback providers, raise RateLimitException
+    if last_error:
+        error_str = str(last_error)
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            raise RateLimitException(
+                "API com muitas requisições simultâneas.",
+                suggestion="Os provedores de IA estão no limite de capacidade. Tente novamente em alguns segundos.",
+            )
+        else:
+            raise GenerationFailedException(
+                f"Falha na geração (último erro: {last_error})",
+                suggestion="Tente novamente ou limpe os caches",
+            )
+    
     raise GenerationFailedException(
-        "Falha após múltiplas tentativas",
-        suggestion="Tente novamente em alguns instantes",
+        "Nenhum provedor disponível processou a requisição",
+        suggestion="Verifique as configurações e chaves de API",
     )

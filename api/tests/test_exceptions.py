@@ -129,7 +129,7 @@ class TestRateLimit(BaseAPITest):
         )
 
         with (
-            patch("api.routes.generate.get_llm", return_value=mock_llm),
+            patch("api.services.generation.get_llm", return_value=mock_llm),
             patch("api.services.generation.asyncio.sleep", new_callable=AsyncMock),
         ):
             response = self.client.post(
@@ -150,7 +150,7 @@ class TestAIParseFailed(BaseAPITest):
         """When the LLM returns malformed JSON, route returns 500 AI_PARSE_FAILED."""
         mock_llm = self._make_llm_mock(response_text="this is not json at all {{{")
 
-        with patch("api.routes.generate.get_llm", return_value=mock_llm):
+        with patch("api.services.generation.get_llm", return_value=mock_llm):
             response = self.client.post(
                 "/api/generate",
                 data={"text": "word " * 20},

@@ -158,7 +158,7 @@ class TestFakeProvider(BaseAPITest):
             )
 
         # mocked real provider
-        with patch("api.routes.generate.get_llm", return_value=mock_llm):
+        with patch("api.services.generation.get_llm", return_value=mock_llm):
             real_resp = self.client.post(
                 "/api/generate",
                 data={"text": "word " * 20},

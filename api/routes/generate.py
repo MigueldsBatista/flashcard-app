@@ -9,7 +9,6 @@ import logging
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 
-from api.modules.ai import get_llm
 from api.modules.auth import require_authenticated_user
 from api.modules.exceptions import (
     ExtractionFailedException,
@@ -75,8 +74,7 @@ async def generate_flashcards(
     logger.info("⏭️ Skipping guardian validation to save tokens")
 
     # Step 2: Generate flashcards via LangChain abstraction
-    llm = get_llm()
-    response_text = await call_llm_with_retry(llm, prompt)
+    response_text = await call_llm_with_retry(require_vision=bool(image), prompt=prompt)
 
     result = parse_ai_response(response_text)
     result.source_text_length = len(source_text)

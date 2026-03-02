@@ -14,6 +14,49 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
 -   **Responsive Design:** Mobile-first approach ensuring a great experience on all devices.
 -   **Secure Authentication:** User management powered by Supabase Auth.
 
+## 📸 Showcase
+
+<details>
+<summary><b>🖥️ Desktop Implementation</b></summary>
+<br>
+
+### Dashboard
+*Overview of your learning progress and upcoming reviews.*
+<div align="center">
+  <img src="media/desktop/dash_dark.png" alt="Dashboard Dark Mode" width="48%" />
+  <img src="media/desktop/dash_light.png" alt="Dashboard Light Mode" width="48%" />
+</div>
+
+### Decks & Cards
+*Manage your learning materials and study sessions.*
+![Decks Dark Mode](media/desktop/decks_dark.png)
+<div align="center">
+  <img src="media/desktop/cards_dark.png" alt="Cards Dark Mode" width="48%" />
+  <img src="media/desktop/text_preview_dark.png" alt="Text Preview Dark Mode" width="48%" />
+</div>
+
+### Image Occlusion Editor
+*Hover/click to reveal labels on images.*
+![Image Occlusion Editor (GIF)](media/desktop/image_occlusion.gif)
+
+### Features
+*AI Generation, Sharing, and Stats.*
+<div align="center">
+  <img src="media/desktop/generate_with_ai.png" alt="Generate with AI" width="32%" />
+  <img src="media/desktop/share_deck.png" alt="Share Deck" width="32%" />
+  <img src="media/desktop/stats_dark.png" alt="Statistics Dark Mode" width="32%" />
+</div>
+
+</details>
+
+<details>
+<summary><b>📱 Mobile Implementation</b></summary>
+<br>
+
+*(Mobile screenshots coming soon!)*
+
+</details>
+
 ## 🛠️ Tech Stack
 
 -   **Framework:** [Vue 3](https://vuejs.org/) (Composition API, Script Setup)
