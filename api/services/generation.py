@@ -13,26 +13,15 @@ import logging
 from langchain_core.messages import HumanMessage
 from pydantic import ValidationError
 
-try:
-    from api.modules.exceptions import (
-        AIParseException,
-        ExtractionFailedException,
-        GenerationFailedException,
-        MissingConfigException,
-        NoContentException,
-        RateLimitException,
-    )
-    from api.modules.schema_parser import GenerationResponse
-except ImportError:
-    from modules.exceptions import (
-        AIParseException,
-        ExtractionFailedException,
-        GenerationFailedException,
-        MissingConfigException,
-        NoContentException,
-        RateLimitException,
-    )
-    from modules.schema_parser import GenerationResponse
+from api.modules.exceptions import (
+    AIParseException,
+    ExtractionFailedException,
+    GenerationFailedException,
+    MissingConfigException,
+    NoContentException,
+    RateLimitException,
+)
+from api.modules.schema_parser import GenerationResponse
 
 logger = logging.getLogger(__name__)
 

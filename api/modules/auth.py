@@ -16,10 +16,7 @@ from jwt.exceptions import InvalidTokenError
 
 logger = logging.getLogger(__name__)
 
-try:
-    from api.modules.exceptions import MissingConfigException, UnauthorizedException
-except ImportError:
-    from modules.exceptions import MissingConfigException, UnauthorizedException
+from api.modules.exceptions import MissingConfigException, UnauthorizedException
 
 security = HTTPBearer(auto_error=False)
 

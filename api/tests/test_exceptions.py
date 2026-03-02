@@ -14,10 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import jwt
 from fastapi.testclient import TestClient
 
-try:
-    from api.index import app
-except ImportError:
-    from index import app
+from api.index import app
 
 
 # ---------------------------------------------------------------------------
@@ -96,10 +93,10 @@ class TestNoContent(BaseAPITest):
 class TestExtractionFailed(BaseAPITest):
     def test_extract_text_raises_extraction_failed(self):
         """When extract_text raises ExtractionFailedException, returns 400 EXTRACTION_FAILED."""
-        from modules.exceptions import ExtractionFailedException
+        from api.modules.exceptions import ExtractionFailedException
 
         with patch(
-            "routes.generate.extract_text",
+            "api.routes.generate.extract_text",
             side_effect=ExtractionFailedException("imagem inválida"),
         ):
             response = self.client.post(
@@ -111,7 +108,7 @@ class TestExtractionFailed(BaseAPITest):
 
     def test_ocr_text_too_short(self):
         """When OCR returns < 10 chars, returns 400 EXTRACTION_FAILED."""
-        with patch("routes.generate.extract_text", return_value="ab"):
+        with patch("api.routes.generate.extract_text", return_value="ab"):
             response = self.client.post(
                 "/api/generate",
                 files={"image": ("test.png", b"\x89PNG\r\n\x1a\n", "image/png")},
@@ -132,8 +129,8 @@ class TestRateLimit(BaseAPITest):
         )
 
         with (
-            patch("routes.generate.get_llm", return_value=mock_llm),
-            patch("services.generation.asyncio.sleep", new_callable=AsyncMock),
+            patch("api.routes.generate.get_llm", return_value=mock_llm),
+            patch("api.services.generation.asyncio.sleep", new_callable=AsyncMock),
         ):
             response = self.client.post(
                 "/api/generate",
@@ -153,7 +150,7 @@ class TestAIParseFailed(BaseAPITest):
         """When the LLM returns malformed JSON, route returns 500 AI_PARSE_FAILED."""
         mock_llm = self._make_llm_mock(response_text="this is not json at all {{{")
 
-        with patch("routes.generate.get_llm", return_value=mock_llm):
+        with patch("api.routes.generate.get_llm", return_value=mock_llm):
             response = self.client.post(
                 "/api/generate",
                 data={"text": "word " * 20},

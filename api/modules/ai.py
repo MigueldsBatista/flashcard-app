@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import os
 
-try:
-    from api.modules.exceptions import MissingConfigException
-except ImportError:
-    from modules.exceptions import MissingConfigException
+from api.modules.exceptions import MissingConfigException
 
 from langchain_core.language_models import BaseChatModel
 

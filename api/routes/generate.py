@@ -9,28 +9,16 @@ import logging
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 
-try:
-    from api.modules.ai import get_llm
-    from api.modules.auth import require_authenticated_user
-    from api.modules.exceptions import (
-        ExtractionFailedException,
-        NoContentException,
-    )
-    from api.modules.schema_parser import GenerationResponse
-    from api.modules.toon_formatter import format_generation_prompt
-    from api.modules.vision_engine import extract_text
-    from api.services.generation import call_llm_with_retry, parse_ai_response
-except ImportError:
-    from modules.ai import get_llm
-    from modules.auth import require_authenticated_user
-    from modules.exceptions import (
-        ExtractionFailedException,
-        NoContentException,
-    )
-    from modules.schema_parser import GenerationResponse
-    from modules.toon_formatter import format_generation_prompt
-    from modules.vision_engine import extract_text
-    from services.generation import call_llm_with_retry, parse_ai_response
+from api.modules.ai import get_llm
+from api.modules.auth import require_authenticated_user
+from api.modules.exceptions import (
+    ExtractionFailedException,
+    NoContentException,
+)
+from api.modules.schema_parser import GenerationResponse
+from api.modules.toon_formatter import format_generation_prompt
+from api.modules.vision_engine import extract_text
+from api.services.generation import call_llm_with_retry, parse_ai_response
 
 logger = logging.getLogger(__name__)
 

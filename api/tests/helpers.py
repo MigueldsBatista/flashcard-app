@@ -3,10 +3,7 @@
 import unittest
 from fastapi.testclient import TestClient
 
-try:
-    from api.index import app
-except ImportError:
-    from index import app
+from api.index import app
 
 
 class BaseAPITest(unittest.TestCase):

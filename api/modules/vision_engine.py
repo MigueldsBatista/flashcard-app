@@ -10,12 +10,8 @@ from typing import TypedDict
 
 from langchain_core.messages import HumanMessage
 
-try:
-    from api.modules.ai import get_llm
-    from api.modules.exceptions import ExtractionFailedException
-except ImportError:
-    from modules.ai import get_llm
-    from modules.exceptions import ExtractionFailedException
+from api.modules.ai import get_llm
+from api.modules.exceptions import ExtractionFailedException
 
 class ImageInfoDict(TypedDict):
     width: int

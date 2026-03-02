@@ -14,14 +14,9 @@ from unittest.mock import patch
 import jwt
 from fastapi.testclient import TestClient
 
-try:
-    from api.index import app
-    from api.modules.ai import get_llm
-    from api.modules.exceptions import MissingConfigException
-except ImportError:
-    from index import app
-    from modules.ai import get_llm
-    from modules.exceptions import MissingConfigException
+from api.index import app
+from api.modules.ai import get_llm
+from api.modules.exceptions import MissingConfigException
 
 
 # ---
@@ -163,7 +158,7 @@ class TestFakeProvider(BaseAPITest):
             )
 
         # mocked real provider
-        with patch("routes.generate.get_llm", return_value=mock_llm):
+        with patch("api.routes.generate.get_llm", return_value=mock_llm):
             real_resp = self.client.post(
                 "/api/generate",
                 data={"text": "word " * 20},

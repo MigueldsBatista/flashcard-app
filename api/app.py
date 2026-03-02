@@ -10,12 +10,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-try:
-    from api.modules.exceptions import setup_exception_handlers
-    from api.modules.rate_limit import IPRateLimitMiddleware
-except ImportError:
-    from modules.exceptions import setup_exception_handlers
-    from modules.rate_limit import IPRateLimitMiddleware
+from api.modules.exceptions import setup_exception_handlers
+from api.modules.rate_limit import IPRateLimitMiddleware
 
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
@@ -50,12 +46,8 @@ def create_app() -> FastAPI:
     )
 
     # Register route modules
-    try:
-        from api.routes.generate import router
-        from api.routes.health import router as health_router
-    except ImportError:
-        from routes.generate import router
-        from routes.health import router as health_router
+    from api.routes.generate import router
+    from api.routes.health import router as health_router
 
     application.include_router(router)
     application.include_router(health_router)

@@ -7,10 +7,7 @@ from unittest.mock import patch
 import jwt
 from fastapi.testclient import TestClient
 
-try:
-    from api.app import create_app
-except ImportError:
-    from app import create_app
+from api.app import create_app
 
 
 class TestSecurityAndHealth(unittest.TestCase):
