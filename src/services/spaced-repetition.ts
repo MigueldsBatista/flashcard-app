@@ -1,12 +1,8 @@
 // SM-2 Spaced Repetition Algorithm (Modified)
 import type { Card, CardDifficulty } from '@/types/flashcard';
 
-const DIFFICULTY_MULTIPLIERS = {
-  forgot: 0, // Reset
-  hard: 1.2,
-  good: 2.5,
-  easy: 4.0
-};
+const HARD_INTERVAL = 1.2; // Anki default: fixed multiplier (no ease factor)
+const EASY_BONUS = 1.3; // Anki default: bonus over Good interval
 
 const MINIMUM_EASE_FACTOR = 1.3;
 const LEECH_THRESHOLD = 8; // Mark as leech after 8 lapses
@@ -46,13 +42,20 @@ export function calculateNextReview(
       easeFactor += 0.15;
     }
 
-    // Calculate new interval
+    // Calculate new interval (Anki-aligned SM-2)
     if (repetitions === 0) {
-      interval = 1; // First review: 1 day
-    } else if (repetitions === 1) {
-      interval = 6; // Second review: 6 days
+      interval = 1; // Graduating interval: 1 day
     } else {
-      interval = Math.round(interval * easeFactor * DIFFICULTY_MULTIPLIERS[difficulty]);
+      // Hard: fixed multiplier without ease factor (Anki default)
+      // Good: standard SM-2 (interval × ease)
+      // Easy: SM-2 + bonus (interval × ease × 1.3)
+      if (difficulty === 'hard') {
+        interval = Math.max(1, Math.round(interval * HARD_INTERVAL));
+      } else if (difficulty === 'easy') {
+        interval = Math.round(interval * easeFactor * EASY_BONUS);
+      } else {
+        interval = Math.round(interval * easeFactor);
+      }
     }
 
     repetitions += 1;

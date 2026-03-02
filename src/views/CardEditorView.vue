@@ -9,7 +9,8 @@ import Tabs from '@/components/ui/Tabs.vue';
 import Textarea from '@/components/ui/Textarea.vue';
 import { useFlashcardStore } from '@/stores/flashcard';
 import type { CardContent, Card as FlashCard, ImageOcclusion } from '@/types/flashcard';
-import { ArrowLeft, Edit, Eye, FilePlus, FileText, Grid3X3, Trash2 } from 'lucide-vue-next';
+import { getDaysSince } from '@/utils/DateUtils';
+import { ArrowLeft, Clock, Edit, Eye, FilePlus, FileText, Grid3X3, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -178,6 +179,14 @@ function getCardTypeLabel(type: string) {
     case 'occlusion': return 'Oclusão';
     default: return 'Texto';
   }
+}
+
+function getReviewAvailability(card: FlashCard) {
+  const days = getDaysSince(card.nextReview);
+
+  if (days <= 0) return { label: 'Disponível', available: true };
+  if (days === 1) return { label: 'Disponível amanhã', available: false };
+  return { label: `Disponível em ${days} dias`, available: false };
 }
 
 function handleDeleteCard(card: FlashCard) {
@@ -369,6 +378,17 @@ function handleCancelOcclusion() {
               :card="previewCard"
               :show-answer="true"
             />
+
+            <div
+              v-if="previewCard"
+              class="flex items-center gap-2 text-sm rounded-lg px-3 py-2"
+              :class="getReviewAvailability(previewCard).available
+                ? 'bg-success/10 text-success'
+                : 'bg-muted text-muted-foreground'"
+            >
+              <Clock class="w-4 h-4 shrink-0" />
+              <span>{{ getReviewAvailability(previewCard).label }}</span>
+            </div>
           </div>
         </template>
       </Dialog>
@@ -411,12 +431,14 @@ function handleCancelOcclusion() {
                 </p>
                 <div class="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                   <span>{{ getCardTypeLabel(card.content.type) }}</span>
-                  <template v-if="new Date(card.nextReview) <= new Date()">
-                    <span>·</span>
-                    <span class="text-warning font-medium">
-                      Para revisar
-                    </span>
-                  </template>
+                  <span>·</span>
+                  <span
+                    :class="getReviewAvailability(card).available
+                      ? 'text-warning font-medium'
+                      : ''"
+                  >
+                    {{ getReviewAvailability(card).label }}
+                  </span>
                 </div>
               </div>
 
