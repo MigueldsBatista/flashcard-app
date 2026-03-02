@@ -10,6 +10,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 interface Props {
   imageData?: string;
   occlusions?: ImageOcclusion[];
+  isEditing?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -219,7 +220,7 @@ onUnmounted(() => {
           @click="handleSave"
         >
           <Check class="w-4 h-4 mr-1.5" />
-          Criar Card
+          {{ props.isEditing ? 'Salvar' : 'Criar Card' }}
         </Button>
         <Button
           variant="outline"

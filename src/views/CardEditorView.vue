@@ -241,7 +241,9 @@ function handleCancelOcclusion() {
               {{ editingCard ? 'Editar Cartão' : 'Novo Cartão' }}
             </h2>
 
+            <!-- Tabs: only shown when creating a new card -->
             <Tabs
+              v-if="!editingCard"
               v-model="cardType"
               :tabs="cardTypeTabs"
             >
@@ -286,6 +288,49 @@ function handleCancelOcclusion() {
                 </div>
               </template>
             </Tabs>
+
+            <!-- Edit mode: show only the card's own content type (no tabs) -->
+            <template v-else>
+              <!-- Editing Text Card -->
+              <div
+                v-if="cardType === 'text'"
+                class="space-y-3"
+              >
+                <div>
+                  <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
+                    Pergunta
+                  </label>
+                  <Textarea
+                    v-model="frontContent"
+                    placeholder="Digite a pergunta..."
+                    :rows="2"
+                  />
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-muted-foreground mb-1.5 block">
+                    Resposta
+                  </label>
+                  <Textarea
+                    v-model="backContent"
+                    placeholder="Digite a resposta..."
+                    :rows="3"
+                  />
+                </div>
+              </div>
+
+              <!-- Editing Occlusion Card -->
+              <div v-else-if="cardType === 'occlusion'">
+                <ImageOcclusionEditor
+                  :image-data="occlusionImageData"
+                  :occlusions="occlusionAreas"
+                  :is-editing="true"
+                  @update:image-data="occlusionImageData = $event"
+                  @update:occlusions="occlusionAreas = $event"
+                  @save="handleOcclusionSave"
+                  @cancel="handleCancelOcclusion"
+                />
+              </div>
+            </template>
 
             <!-- Action buttons for non-occlusion types -->
             <div
