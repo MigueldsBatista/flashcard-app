@@ -2,6 +2,7 @@
 import ImageOcclusionDialog from '@/components/ImageOcclusionDialog.vue';
 import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
+import { useOcclusionCanvas } from '@/composables/useOcclusionCanvas';
 import type { ImageOcclusion } from '@/types/flashcard';
 import { Check, Edit2, Upload } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
@@ -24,34 +25,45 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const imageElement = ref<HTMLImageElement | null>(null);
+
+// Canvas composable
+const {
+  imageLoaded,
+  loadImageAndSetup,
+  setupCanvas,
+  redrawCanvas: baseRedraw
+} = useOcclusionCanvas(canvasRef, containerRef);
 
 // State
 const imageData = ref(props.imageData || '');
 const occlusions = ref<ImageOcclusion[]>(props.occlusions || []);
-const imageLoaded = ref(false);
-const canvasScale = ref(1);
 const dialogOpen = ref(false);
 
 // Computed
 const hasImage = computed(() => !!imageData.value);
 const canSave = computed(() => hasImage.value && occlusions.value.length > 0);
 
+// Canvas setup options for preview mode
+const PREVIEW_OPTIONS = { maxHeight: 300 };
+
+function redrawCanvas() {
+  baseRedraw(occlusions.value);
+}
+
 function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
-
-  imageLoaded.value = false;
 
   const reader = new FileReader();
   reader.onload = (e) => {
     imageData.value = e.target?.result as string;
     emit('update:imageData', imageData.value);
     nextTick(() => {
-      loadImageAndSetupCanvas();
-      // Auto-open dialog for new images
-      dialogOpen.value = true;
+      loadImageAndSetup(imageData.value, PREVIEW_OPTIONS).then(() => {
+        redrawCanvas();
+        dialogOpen.value = true;
+      });
     });
   };
   reader.readAsDataURL(file);
@@ -59,97 +71,6 @@ function handleFileSelect(event: Event) {
 
 function triggerFileInput() {
   fileInputRef.value?.click();
-}
-
-function loadImageAndSetupCanvas() {
-  if (!imageData.value) return;
-
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-
-  img.onload = () => {
-    imageElement.value = img;
-    imageLoaded.value = true;
-    nextTick(() => setupCanvas());
-  };
-
-  img.onerror = () => imageLoaded.value = false;
-
-  img.src = imageData.value;
-}
-
-function setupCanvas() {
-  const canvas = canvasRef.value;
-  const container = containerRef.value;
-  const img = imageElement.value;
-
-  if (!canvas || !container || !img) return;
-
-  const containerWidth = Math.max(container.clientWidth, 200);
-  const maxHeight = 300;
-
-  const scaleX = containerWidth / img.width;
-  const scaleY = maxHeight / img.height;
-  const displayScale = Math.min(scaleX, scaleY, 1);
-  canvasScale.value = displayScale;
-
-  const displayWidth = Math.floor(img.width * displayScale);
-  const displayHeight = Math.floor(img.height * displayScale);
-
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width = img.width * Math.min(dpr, 2);
-  canvas.height = img.height * Math.min(dpr, 2);
-
-  canvas.style.width = `${displayWidth}px`;
-  canvas.style.height = `${displayHeight}px`;
-
-  redrawCanvas();
-}
-
-function redrawCanvas() {
-  const canvas = canvasRef.value;
-  const ctx = canvas?.getContext('2d');
-  const img = imageElement.value;
-
-  if (!canvas || !ctx || !img) return;
-
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const internalScale = canvas.width / img.width;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-  // Draw occlusions as solid rectangles (preview only)
-  occlusions.value.forEach((occ, index) => {
-    const x = occ.x * internalScale;
-    const y = occ.y * internalScale;
-    const width = occ.width * internalScale;
-    const height = occ.height * internalScale;
-    const color = occ.label || '#EF4444';
-
-    // Solid fill
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, width, height);
-
-    // Border
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-    ctx.lineWidth = 1 * dpr;
-    ctx.strokeRect(x, y, width, height);
-
-    // Label
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 2 * dpr;
-    const fontSize = Math.max(14 * dpr, Math.min(width, height) * 0.35);
-    ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.strokeText(`${index + 1}`, x + width / 2, y + height / 2);
-    ctx.fillText(`${index + 1}`, x + width / 2, y + height / 2);
-  });
 }
 
 function openEditor() {
@@ -176,7 +97,8 @@ function handleSave() {
 
 function handleResize() {
   if (imageLoaded.value) {
-    setupCanvas();
+    setupCanvas(PREVIEW_OPTIONS);
+    redrawCanvas();
   }
 }
 
@@ -185,7 +107,9 @@ watch(() => props.imageData, (newVal) => {
   if (newVal !== imageData.value) {
     imageData.value = newVal || '';
     if (imageData.value) {
-      nextTick(() => loadImageAndSetupCanvas());
+      nextTick(() => {
+        loadImageAndSetup(imageData.value, PREVIEW_OPTIONS).then(() => redrawCanvas());
+      });
     }
   }
 });
@@ -199,7 +123,7 @@ watch(() => props.occlusions, (newVal) => {
 
 onMounted(() => {
   if (imageData.value) {
-    loadImageAndSetupCanvas();
+    loadImageAndSetup(imageData.value, PREVIEW_OPTIONS).then(() => redrawCanvas());
   }
   window.addEventListener('resize', handleResize);
 });
