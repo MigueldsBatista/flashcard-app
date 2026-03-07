@@ -9,3 +9,4 @@ Since this makes the code harder to read and track
 
 3. Dumb components smart composables, components should not have a internal logic, this should almost always be inside composables, helpers etc, and composables should only orchestrate
 
+4. Follow DRY principle, before implementing a method, class, type etc, verify it doesn't already exist.

@@ -89,3 +89,17 @@ A interface deve transmitir calma. O uso de espaços em branco (ou espaços vazi
 *   **Gerenciador de Pacotes:** Bun.
 *   **Frontend:** Vue.js 3 + Vite.
 *   **Backend:** Supabase.
+
+## 12. Funcionalidades Adicionais Planejadas
+*   **Push Notifications:** Quando um card ficar disponível.
+*   **Embaralhar cards:** Para evitar assuntos iguais seguidos.
+*   **Full screen no mobile:** Possibilidade de baixar e ícones funcionando adequadamente.
+*   **Bulk create:** Múltiplos cards com padrão via Regex (ex: Frente: ABCD? Verso: cdefg!).
+*   **Referências de Notificações Push:** 
+    - [Firebase Console](https://console.firebase.google.com/u/0/project/flashcard-app-54a88/settings/cloudmessaging?hl=pt-br)
+    - [Firebase Docs](https://firebase.google.com/docs/cloud-messaging/web/get-started?hl=pt-br#web)
+    - [Supabase Edge Functions: Push Notifications](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=fcm)
+
+## 13. Compartilhamento Dinâmico e Estratégia Offline
+*   **Share Data (Web Share API, complementa RF10):** Utilizar `navigator.share()` para partilhar progresso no WhatsApp, Instagram, etc.
+*   **Offline Support (complementa RF09):** O `vite-plugin-pwa` usa o Workbox para gerenciar o cache. Configurar `NetworkFirst` para endpoints da API para servir via cache offline se falhar network.
