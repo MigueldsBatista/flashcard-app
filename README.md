@@ -7,6 +7,8 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
 -   **Spaced Repetition System (SRS):** Uses a modified SM-2 algorithm to schedule reviews at optimal intervals.
 -   **Rich Content Support:** Create cards with Markdown text and Code blocks.
 -   **Image Occlusion:** Enhanced learning for anatomy, diagrams, and maps by hiding parts of an image.
+-   **AI Backend Infrastructure:** Dedicated FastAPI backend with modular routes/services and secure request handling.
+-   **LLM Adapter Layer:** LangChain-based adapter pattern to standardize provider integrations and generation flows.
 -   **Dashboard & Statistics:** Detailed metrics on readiness, streaks, accuracy, and review activity.
 -   **Deck Management:** Organize cards into decks with custom colors and descriptions.
 -   **Study Modes:** Interactive study sessions with standard difficulty ratings (Forgot, Hard, Good, Easy) and haptic feedback.
@@ -93,6 +95,9 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
 -   **State Management:** [Pinia](https://pinia.vuejs.org/)
 -   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 -   **Backend / Auth:** [Supabase](https://supabase.com/)
+-   **Backend API:** [FastAPI](https://fastapi.tiangolo.com/) (Python backend in `api/` with modular routes and services)
+-   **LLM Orchestration:** [LangChain](https://www.langchain.com/) with adapter-based abstraction for model providers
+-   **Database / Auth:** [Supabase](https://supabase.com/)
 -   **Testing:** [Vitest](https://vitest.dev/)
 -   **Icons:** [Lucide Vue](https://lucide.dev/)
 -   **Charts:** [Chart.js](https://www.chartjs.org/) with [vue-chartjs](https://vue-chartjs.org/)
@@ -176,6 +181,8 @@ bun lint
 -   `src/composables`: Reusable Vue composables (Statistics, Notifications).
 -   `src/types`: TypeScript interfaces and types.
 -   `src/lib`: Third-party library configurations (Supabase).
+-   `api/`: FastAPI backend (REST endpoints, auth/validation modules, generation services, and tests).
+-   `api/modules/ai.py`: LangChain-driven adapter layer for LLM provider abstraction.
 
 ## 🤝 Contributing
 
