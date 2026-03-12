@@ -18,7 +18,6 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
 
 ## 📸 Showcase
 
-<details>
 <summary><b>🖥️ Desktop UI (Click Here)</b></summary>
 <br>
 
@@ -50,9 +49,7 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
   <img src="media/desktop/stats_dark.png" alt="Statistics Dark Mode" width="32%" />
 </div>
 
-</details>
 
-<details>
 <summary><b>📱 Mobile UI (Click Here)</b></summary>
 <br>
 
@@ -85,7 +82,6 @@ Ultra Focus is a modern, feature-rich spaced repetition flashcard application de
   <img src="media/mobile/stats_2_dark.png" alt="Stats Details" width="48%" />
 </div>
 
-</details>
 
 ## 🛠️ Tech Stack
 
