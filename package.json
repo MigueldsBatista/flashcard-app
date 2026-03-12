@@ -1,6 +1,7 @@
 {
   "name": "frontend",
   "version": "0.0.0",
+  "description": "Ultra Focus – a spaced repetition flashcard app built with Vue 3, TypeScript, and Supabase, featuring the SM-2 algorithm, image occlusion, AI-powered card generation, and detailed study statistics.",
   "private": true,
   "type": "module",
   "scripts": {
